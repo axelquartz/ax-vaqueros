@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+const PLACEHOLDER = 'REEMPLAZA_CON_TU_CLAVE'
+const isDemoMode  = !process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes(PLACEHOLDER)
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,8 +12,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Monto inválido' }, { status: 400 })
     }
 
+    // Modo demo: sin claves reales, simula un Payment Intent exitoso
+    if (isDemoMode) {
+      return NextResponse.json({
+        clientSecret: 'demo_secret',
+        demo: true,
+      })
+    }
+
     // TODO (producción): calcular el monto en el servidor verificando
     // los items del pedido contra la base de datos, nunca confiar en el cliente.
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100), // Stripe usa centavos
       currency: 'mxn',

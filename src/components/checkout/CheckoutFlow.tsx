@@ -207,6 +207,83 @@ function StepCustomer({ form, errors, deliveryMethod, onChange, onNext, onBack, 
   )
 }
 
+// ─── Step 4: Pago demo (sin Stripe) ──────────────────────
+function DemoPaymentForm({ total, deliveryFee, folio, onBack }: {
+  total: number
+  deliveryFee: number
+  folio: string
+  onBack: () => void
+}) {
+  const router = useRouter()
+  const { clearCart } = useCart()
+  const [submitting, setSubmitting] = useState(false)
+  const orderTotal = total + deliveryFee
+
+  const handlePay = async () => {
+    setSubmitting(true)
+    await new Promise(r => setTimeout(r, 900))
+    clearCart()
+    router.push(`/order/${folio}`)
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-foreground font-semibold text-base">Pago</h2>
+        <p className="text-muted text-xs mt-0.5">Tus datos están protegidos por Stripe</p>
+      </div>
+
+      {/* Aviso modo demo */}
+      <div className="bg-warning/10 border border-warning/30 rounded-xl px-4 py-3">
+        <p className="text-warning text-xs font-medium">Modo demo activo</p>
+        <p className="text-muted text-xs mt-0.5">
+          Configura <code className="text-brand">STRIPE_SECRET_KEY</code> en <code className="text-brand">.env.local</code> para habilitar pagos reales.
+        </p>
+      </div>
+
+      {/* Formulario simulado */}
+      <div className="bg-surface border border-border rounded-xl p-4 space-y-3 opacity-60">
+        <div className="bg-elevated border border-border rounded-lg px-3 py-2.5">
+          <p className="text-muted text-sm tracking-widest">•••• •••• •••• ••••</p>
+        </div>
+        <div className="flex gap-3">
+          <div className="flex-1 bg-elevated border border-border rounded-lg px-3 py-2.5">
+            <p className="text-muted text-xs">MM / AA</p>
+          </div>
+          <div className="w-24 bg-elevated border border-border rounded-lg px-3 py-2.5">
+            <p className="text-muted text-xs">CVV</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Desglose */}
+      <div className="bg-surface border border-border rounded-xl px-4 py-3 space-y-2">
+        <div className="flex justify-between text-sm">
+          <span className="text-secondary">Subtotal</span>
+          <span className="text-foreground">${total}</span>
+        </div>
+        {deliveryFee > 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-secondary">Envío</span>
+            <span className="text-foreground">${deliveryFee}</span>
+          </div>
+        )}
+        <div className="flex justify-between font-semibold border-t border-border pt-2">
+          <span className="text-foreground">Total</span>
+          <span className="text-foreground">${orderTotal}</span>
+        </div>
+      </div>
+
+      <div className="flex gap-3">
+        <Button variant="ghost" size="lg" onClick={onBack} disabled={submitting} className="flex-1">Atrás</Button>
+        <Button size="lg" onClick={handlePay} disabled={submitting} className="flex-1">
+          {submitting ? 'Procesando...' : `Simular pago · $${orderTotal}`}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 // ─── Step 4: Pago (dentro de Elements) ───────────────────
 function PaymentForm({ total, deliveryFee, folio, onBack }: {
   total: number
@@ -300,6 +377,7 @@ export function CheckoutFlow() {
   const [form, setForm]               = useState<FormState>({ name: '', phone: '', address: '', tableNumber: '', notes: '' })
   const [errors, setErrors]           = useState<Partial<FormState>>({})
   const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [isDemoMode, setIsDemoMode]   = useState(false)
   const [folio, setFolio]             = useState<string>('')
   const [creatingIntent, setCreatingIntent] = useState(false)
 
@@ -338,6 +416,7 @@ export function CheckoutFlow() {
       const newFolio = `ORD-${String(Math.floor(Math.random() * 9000) + 1000)}`
       setFolio(newFolio)
       setClientSecret(data.clientSecret)
+      setIsDemoMode(!!data.demo)
       setStep('payment')
     } catch (err) {
       console.error(err)
@@ -383,17 +462,26 @@ export function CheckoutFlow() {
         />
       )}
       {step === 'payment' && clientSecret && (
-        <Elements
-          stripe={stripePromise}
-          options={{ clientSecret, appearance: stripeAppearance }}
-        >
-          <PaymentForm
+        isDemoMode ? (
+          <DemoPaymentForm
             total={total}
             deliveryFee={selectedMethod.price}
             folio={folio}
             onBack={() => setStep('customer')}
           />
-        </Elements>
+        ) : (
+          <Elements
+            stripe={stripePromise}
+            options={{ clientSecret, appearance: stripeAppearance }}
+          >
+            <PaymentForm
+              total={total}
+              deliveryFee={selectedMethod.price}
+              folio={folio}
+              onBack={() => setStep('customer')}
+            />
+          </Elements>
+        )
       )}
     </div>
   )
