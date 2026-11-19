@@ -2,12 +2,40 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { loadStripe } from '@stripe/stripe-js'
+import {
+  Elements,
+  PaymentElement,
+  useStripe,
+  useElements,
+} from '@stripe/react-stripe-js'
 import { Input, Textarea } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { useCart } from '@/context/CartContext'
 import ordersData from '@/data/orders.json'
 
-// ─── Types ───────────────────────────────────────────────
+// ─── Stripe setup ─────────────────────────────────────────
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+
+const stripeAppearance = {
+  theme: 'night' as const,
+  variables: {
+    colorPrimary:         '#C9A96E',
+    colorBackground:      '#1F1F1F',
+    colorText:            '#F2EDE4',
+    colorTextPlaceholder: '#5C5550',
+    colorDanger:          '#E05C5C',
+    borderRadius:         '12px',
+    fontSizeBase:         '14px',
+  },
+  rules: {
+    '.Input':       { border: '1px solid #2E2E2E', boxShadow: 'none' },
+    '.Input:focus': { border: '1px solid #C9A96E', boxShadow: 'none' },
+    '.Label':       { color: '#9A9088', fontSize: '12px', fontWeight: '500' },
+  },
+}
+
+// ─── Types ────────────────────────────────────────────────
 type DeliveryMethodId = 'pickup' | 'table' | 'delivery'
 
 interface FormState {
@@ -21,30 +49,27 @@ interface FormState {
 type StepId = 'review' | 'delivery' | 'customer' | 'payment'
 
 const STEPS: { id: StepId; label: string }[] = [
-  { id: 'review',   label: 'Resumen'  },
-  { id: 'delivery', label: 'Entrega'  },
-  { id: 'customer', label: 'Datos'    },
-  { id: 'payment',  label: 'Pago'     },
+  { id: 'review',   label: 'Resumen' },
+  { id: 'delivery', label: 'Entrega' },
+  { id: 'customer', label: 'Datos'   },
+  { id: 'payment',  label: 'Pago'    },
 ]
 
-// ─── Step Indicator ──────────────────────────────────────
+// ─── Step Indicator ───────────────────────────────────────
 function StepIndicator({ current }: { current: StepId }) {
   const currentIndex = STEPS.findIndex(s => s.id === current)
-
   return (
     <div className="flex items-center justify-between px-1">
       {STEPS.map((step, i) => {
         const done   = i < currentIndex
         const active = i === currentIndex
-
         return (
           <div key={step.id} className="flex items-center flex-1 last:flex-none">
-            {/* Círculo */}
             <div className="flex flex-col items-center gap-1">
               <div className={[
                 'w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold border transition-colors',
-                done   ? 'bg-brand border-brand text-inverse'          : '',
-                active ? 'bg-brand/10 border-brand text-brand'         : '',
+                done   ? 'bg-brand border-brand text-inverse'             : '',
+                active ? 'bg-brand/10 border-brand text-brand'            : '',
                 !done && !active ? 'bg-elevated border-border text-muted' : '',
               ].join(' ')}>
                 {done ? '✓' : i + 1}
@@ -53,7 +78,6 @@ function StepIndicator({ current }: { current: StepId }) {
                 {step.label}
               </span>
             </div>
-            {/* Línea conectora */}
             {i < STEPS.length - 1 && (
               <div className={[
                 'flex-1 h-px mx-2 mb-4',
@@ -67,17 +91,15 @@ function StepIndicator({ current }: { current: StepId }) {
   )
 }
 
-// ─── Step 1: Resumen ─────────────────────────────────────
+// ─── Step 1: Resumen ──────────────────────────────────────
 function StepReview({ onNext }: { onNext: () => void }) {
   const { items, total, updateQuantity } = useCart()
-
   return (
     <div className="space-y-4">
       <div>
         <h2 className="text-foreground font-semibold text-base">Tu orden</h2>
         <p className="text-muted text-xs mt-0.5">Revisa los productos antes de continuar</p>
       </div>
-
       <div className="bg-surface border border-border rounded-xl overflow-hidden">
         {items.map(item => (
           <div key={item.id} className="flex items-start gap-3 px-4 py-3 border-b border-border last:border-0">
@@ -88,37 +110,27 @@ function StepReview({ onNext }: { onNext: () => void }) {
               )}
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <button
-                onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                className="w-6 h-6 rounded-full border border-border text-secondary text-xs flex items-center justify-center hover:border-border-strong"
-              >−</button>
+              <button onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                className="w-6 h-6 rounded-full border border-border text-secondary text-xs flex items-center justify-center hover:border-border-strong">−</button>
               <span className="text-foreground text-xs font-medium w-4 text-center">{item.quantity}</span>
-              <button
-                onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                className="w-6 h-6 rounded-full border border-border text-secondary text-xs flex items-center justify-center hover:border-border-strong"
-              >+</button>
+              <button onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                className="w-6 h-6 rounded-full border border-border text-secondary text-xs flex items-center justify-center hover:border-border-strong">+</button>
             </div>
             <span className="text-foreground text-sm font-semibold shrink-0">${item.subtotal}</span>
           </div>
         ))}
-
         <div className="flex justify-between px-4 py-3 bg-elevated">
           <span className="text-secondary text-sm">Subtotal</span>
           <span className="text-foreground text-sm font-semibold">${total}</span>
         </div>
       </div>
-
-      <Button fullWidth size="lg" onClick={onNext} disabled={items.length === 0}>
-        Continuar
-      </Button>
+      <Button fullWidth size="lg" onClick={onNext} disabled={items.length === 0}>Continuar</Button>
     </div>
   )
 }
 
-// ─── Step 2: Método de entrega ───────────────────────────
-function StepDelivery({
-  selected, onSelect, onNext, onBack,
-}: {
+// ─── Step 2: Entrega ──────────────────────────────────────
+function StepDelivery({ selected, onSelect, onNext, onBack }: {
   selected: DeliveryMethodId
   onSelect: (id: DeliveryMethodId) => void
   onNext: () => void
@@ -130,32 +142,21 @@ function StepDelivery({
         <h2 className="text-foreground font-semibold text-base">¿Cómo lo recibes?</h2>
         <p className="text-muted text-xs mt-0.5">Elige el método de entrega</p>
       </div>
-
       <div className="space-y-2">
         {ordersData.deliveryMethods.map(method => (
-          <button
-            key={method.id}
-            onClick={() => onSelect(method.id as DeliveryMethodId)}
+          <button key={method.id} onClick={() => onSelect(method.id as DeliveryMethodId)}
             className={[
               'w-full flex items-center justify-between px-4 py-4 rounded-xl border text-left transition-colors',
-              selected === method.id
-                ? 'border-brand bg-brand/5'
-                : 'border-border bg-surface hover:border-border-strong',
-            ].join(' ')}
-          >
+              selected === method.id ? 'border-brand bg-brand/5' : 'border-border bg-surface hover:border-border-strong',
+            ].join(' ')}>
             <div>
-              <p className={`text-sm font-medium ${selected === method.id ? 'text-brand' : 'text-foreground'}`}>
-                {method.label}
-              </p>
+              <p className={`text-sm font-medium ${selected === method.id ? 'text-brand' : 'text-foreground'}`}>{method.label}</p>
               <p className="text-xs text-muted mt-0.5">{method.eta}</p>
             </div>
-            <span className="text-sm text-secondary shrink-0">
-              {method.price === 0 ? 'Gratis' : `+$${method.price}`}
-            </span>
+            <span className="text-sm text-secondary shrink-0">{method.price === 0 ? 'Gratis' : `+$${method.price}`}</span>
           </button>
         ))}
       </div>
-
       <div className="flex gap-3">
         <Button variant="ghost" size="lg" onClick={onBack} className="flex-1">Atrás</Button>
         <Button size="lg" onClick={onNext} className="flex-1">Continuar</Button>
@@ -164,17 +165,15 @@ function StepDelivery({
   )
 }
 
-// ─── Step 3: Datos del cliente ───────────────────────────
-function StepCustomer({
-  form, errors, deliveryMethod,
-  onChange, onNext, onBack,
-}: {
+// ─── Step 3: Datos del cliente ────────────────────────────
+function StepCustomer({ form, errors, deliveryMethod, onChange, onNext, onBack, loading }: {
   form: FormState
   errors: Partial<FormState>
   deliveryMethod: DeliveryMethodId
   onChange: (key: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
   onNext: () => void
   onBack: () => void
+  loading: boolean
 }) {
   return (
     <div className="space-y-4">
@@ -182,7 +181,6 @@ function StepCustomer({
         <h2 className="text-foreground font-semibold text-base">Tus datos</h2>
         <p className="text-muted text-xs mt-0.5">Para coordinar tu pedido</p>
       </div>
-
       <div className="space-y-3">
         <Input label="Nombre" placeholder="¿Cómo te llamamos?"
           value={form.name} onChange={onChange('name')} error={errors.name} />
@@ -199,60 +197,70 @@ function StepCustomer({
         <Textarea label="Notas (opcional)" placeholder="Alergias, preferencias..."
           value={form.notes} onChange={onChange('notes')} />
       </div>
-
       <div className="flex gap-3">
         <Button variant="ghost" size="lg" onClick={onBack} className="flex-1">Atrás</Button>
-        <Button size="lg" onClick={onNext} className="flex-1">Continuar</Button>
+        <Button size="lg" onClick={onNext} disabled={loading} className="flex-1">
+          {loading ? 'Preparando pago...' : 'Continuar'}
+        </Button>
       </div>
     </div>
   )
 }
 
-// ─── Step 4: Pago ────────────────────────────────────────
-function StepPayment({
-  total, deliveryFee, submitting,
-  onPay, onBack,
-}: {
+// ─── Step 4: Pago (dentro de Elements) ───────────────────
+function PaymentForm({ total, deliveryFee, folio, onBack }: {
   total: number
   deliveryFee: number
-  submitting: boolean
-  onPay: () => void
+  folio: string
   onBack: () => void
 }) {
+  const stripe   = useStripe()
+  const elements = useElements()
+  const router   = useRouter()
+  const { clearCart } = useCart()
+
+  const [submitting, setSubmitting] = useState(false)
+  const [stripeError, setStripeError] = useState<string | null>(null)
+
   const orderTotal = total + deliveryFee
+
+  const handlePay = async () => {
+    if (!stripe || !elements) return
+    setSubmitting(true)
+    setStripeError(null)
+
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: `${window.location.origin}/order/${folio}`,
+      },
+      redirect: 'if_required',
+    })
+
+    if (error) {
+      setStripeError(error.message ?? 'Error al procesar el pago')
+      setSubmitting(false)
+    } else {
+      clearCart()
+      router.push(`/order/${folio}`)
+    }
+  }
 
   return (
     <div className="space-y-4">
       <div>
         <h2 className="text-foreground font-semibold text-base">Pago</h2>
-        <p className="text-muted text-xs mt-0.5">Próximamente: pago con tarjeta vía Stripe</p>
+        <p className="text-muted text-xs mt-0.5">Tus datos están protegidos por Stripe</p>
       </div>
 
-      {/* Stripe placeholder */}
-      <div className="bg-surface border border-border rounded-xl p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <p className="text-secondary text-xs font-medium">Número de tarjeta</p>
-          <div className="flex gap-1">
-            {['VISA', 'MC'].map(b => (
-              <span key={b} className="text-xs text-muted border border-border rounded px-1.5 py-0.5">{b}</span>
-            ))}
-          </div>
-        </div>
-        <div className="bg-elevated border border-border rounded-lg px-3 py-2.5">
-          <p className="text-muted text-sm tracking-widest">•••• •••• •••• ••••</p>
-        </div>
-        <div className="flex gap-3">
-          <div className="flex-1 bg-elevated border border-border rounded-lg px-3 py-2.5">
-            <p className="text-muted text-xs">MM / AA</p>
-          </div>
-          <div className="w-24 bg-elevated border border-border rounded-lg px-3 py-2.5">
-            <p className="text-muted text-xs">CVV</p>
-          </div>
-        </div>
-        <p className="text-muted text-xs text-center pt-1">
-          Integración Stripe pendiente — demo en modo simulado
-        </p>
+      {/* Stripe PaymentElement */}
+      <div className="bg-surface border border-border rounded-xl p-4">
+        <PaymentElement />
       </div>
+
+      {stripeError && (
+        <p className="text-error text-xs px-1">{stripeError}</p>
+      )}
 
       {/* Desglose */}
       <div className="bg-surface border border-border rounded-xl px-4 py-3 space-y-2">
@@ -273,8 +281,8 @@ function StepPayment({
       </div>
 
       <div className="flex gap-3">
-        <Button variant="ghost" size="lg" onClick={onBack} className="flex-1">Atrás</Button>
-        <Button size="lg" onClick={onPay} disabled={submitting} className="flex-1">
+        <Button variant="ghost" size="lg" onClick={onBack} disabled={submitting} className="flex-1">Atrás</Button>
+        <Button size="lg" onClick={handlePay} disabled={submitting || !stripe} className="flex-1">
           {submitting ? 'Procesando...' : `Pagar $${orderTotal}`}
         </Button>
       </div>
@@ -284,16 +292,19 @@ function StepPayment({
 
 // ─── Main ─────────────────────────────────────────────────
 export function CheckoutFlow() {
-  const { items, total, clearCart } = useCart()
+  const { items, total } = useCart()
   const router = useRouter()
 
-  const [step, setStep]                 = useState<StepId>('review')
-  const [deliveryMethod, setDelivery]   = useState<DeliveryMethodId>('pickup')
-  const [form, setForm]                 = useState<FormState>({ name: '', phone: '', address: '', tableNumber: '', notes: '' })
-  const [errors, setErrors]             = useState<Partial<FormState>>({})
-  const [submitting, setSubmitting]     = useState(false)
+  const [step, setStep]               = useState<StepId>('review')
+  const [deliveryMethod, setDelivery] = useState<DeliveryMethodId>('pickup')
+  const [form, setForm]               = useState<FormState>({ name: '', phone: '', address: '', tableNumber: '', notes: '' })
+  const [errors, setErrors]           = useState<Partial<FormState>>({})
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [folio, setFolio]             = useState<string>('')
+  const [creatingIntent, setCreatingIntent] = useState(false)
 
   const selectedMethod = ordersData.deliveryMethods.find(m => m.id === deliveryMethod)!
+  const orderTotal = total + selectedMethod.price
 
   const patchField = (key: keyof FormState) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -310,25 +321,30 @@ export function CheckoutFlow() {
     return e
   }
 
-  const goToCustomer = () => {
-    const errs = validateCustomer()
-    // Clear and validate on advance only if coming back; validate fresh on submit
-    setErrors({})
-    setStep('customer')
-  }
-
-  const goToPayment = () => {
+  const goToPayment = async () => {
     const errs = validateCustomer()
     if (Object.keys(errs).length > 0) { setErrors(errs); return }
-    setStep('payment')
-  }
 
-  const handlePay = async () => {
-    setSubmitting(true)
-    await new Promise(r => setTimeout(r, 900))
-    const folio = `ORD-${String(Math.floor(Math.random() * 9000) + 1000)}`
-    clearCart()
-    router.push(`/order/${folio}`)
+    setCreatingIntent(true)
+    try {
+      const res = await fetch('/api/checkout/payment-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: orderTotal }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+
+      const newFolio = `ORD-${String(Math.floor(Math.random() * 9000) + 1000)}`
+      setFolio(newFolio)
+      setClientSecret(data.clientSecret)
+      setStep('payment')
+    } catch (err) {
+      console.error(err)
+      setErrors({ name: 'Error al conectar con el servidor de pagos. Intenta de nuevo.' })
+    } finally {
+      setCreatingIntent(false)
+    }
   }
 
   if (items.length === 0 && step !== 'payment') {
@@ -363,16 +379,21 @@ export function CheckoutFlow() {
           onChange={patchField}
           onNext={goToPayment}
           onBack={() => setStep('delivery')}
+          loading={creatingIntent}
         />
       )}
-      {step === 'payment' && (
-        <StepPayment
-          total={total}
-          deliveryFee={selectedMethod.price}
-          submitting={submitting}
-          onPay={handlePay}
-          onBack={() => setStep('customer')}
-        />
+      {step === 'payment' && clientSecret && (
+        <Elements
+          stripe={stripePromise}
+          options={{ clientSecret, appearance: stripeAppearance }}
+        >
+          <PaymentForm
+            total={total}
+            deliveryFee={selectedMethod.price}
+            folio={folio}
+            onBack={() => setStep('customer')}
+          />
+        </Elements>
       )}
     </div>
   )
