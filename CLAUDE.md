@@ -21,16 +21,19 @@
 
 ## Próximas Integraciones
 
-### Pasarela de Pagos
+### Pasarela de Pagos — Stripe
 - Rediseñar `CheckoutFlow` como stepper antes de integrar.
-- Candidatos: **Stripe** (recomendado), Conekta (OXXO), MercadoPago (LATAM).
+- SDK: `@stripe/stripe-js` + `@stripe/react-stripe-js`.
+- Flujo: Payment Intent en API Route → `PaymentElement` en el cliente.
+- Variables de entorno: `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
 
-### Mapa de Seguimiento (`OrderMap`)
-- Mostrar mapa solo cuando `deliveryMethod === 'delivery'`.
-- Para pedidos en mostrador/mesa: mostrar solo progreso de estatus en texto.
-- Librería candidata: **Mapbox GL JS** o Google Maps SDK.
-- Seguimiento en tiempo real requiere WebSockets o polling — depende de backend real.
-- Por ahora: placeholder de mapa + simulación de movimiento con datos mock.
+### Mapa de Seguimiento — Google Maps
+- Componente `OrderMap`, visible solo cuando `deliveryMethod === 'delivery'`.
+- SDK: `@vis.gl/react-google-maps` (wrapper oficial React para Maps JS API).
+- Variable de entorno: `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`.
+- Para pedidos en mostrador/mesa: solo progreso de estatus en texto.
+- Seguimiento en tiempo real requiere WebSockets — depende de backend real.
+- Por ahora: placeholder de mapa + simulación de posición del repartidor con datos mock.
 
 ## Dependencias de Backend (futuras)
 - Base de datos real (Supabase o similar) para pedidos persistentes.
