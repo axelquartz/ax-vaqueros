@@ -1,0 +1,42 @@
+export interface OrderItem {
+  productId: string
+  name: string
+  quantity: number
+  unitPrice: number
+  variants: Record<string, string>
+  subtotal: number
+}
+
+export interface Customer {
+  name: string
+  phone: string
+  address?: string
+  tableNumber?: string
+  notes: string
+}
+
+export interface Order {
+  id: string
+  createdAt: string
+  updatedAt: string
+  status: string
+  deliveryMethod: string
+  customer: Customer
+  items: OrderItem[]
+  subtotal: number
+  deliveryFee: number
+  total: number
+}
+
+export interface DeliveryMethod {
+  id: string
+  label: string
+  price: number
+  eta: string
+}
+
+export interface OrderStatus {
+  id: string
+  label: string
+  color: string
+}
