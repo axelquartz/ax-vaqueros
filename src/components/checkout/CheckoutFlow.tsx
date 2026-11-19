@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { useCart } from '@/context/CartContext'
 import ordersData from '@/data/orders.json'
 
+// ─── Types ───────────────────────────────────────────────
 type DeliveryMethodId = 'pickup' | 'table' | 'delivery'
 
 interface FormState {
@@ -17,24 +18,290 @@ interface FormState {
   notes: string
 }
 
+type StepId = 'review' | 'delivery' | 'customer' | 'payment'
+
+const STEPS: { id: StepId; label: string }[] = [
+  { id: 'review',   label: 'Resumen'  },
+  { id: 'delivery', label: 'Entrega'  },
+  { id: 'customer', label: 'Datos'    },
+  { id: 'payment',  label: 'Pago'     },
+]
+
+// ─── Step Indicator ──────────────────────────────────────
+function StepIndicator({ current }: { current: StepId }) {
+  const currentIndex = STEPS.findIndex(s => s.id === current)
+
+  return (
+    <div className="flex items-center justify-between px-1">
+      {STEPS.map((step, i) => {
+        const done   = i < currentIndex
+        const active = i === currentIndex
+
+        return (
+          <div key={step.id} className="flex items-center flex-1 last:flex-none">
+            {/* Círculo */}
+            <div className="flex flex-col items-center gap-1">
+              <div className={[
+                'w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold border transition-colors',
+                done   ? 'bg-brand border-brand text-inverse'          : '',
+                active ? 'bg-brand/10 border-brand text-brand'         : '',
+                !done && !active ? 'bg-elevated border-border text-muted' : '',
+              ].join(' ')}>
+                {done ? '✓' : i + 1}
+              </div>
+              <span className={`text-xs ${active ? 'text-foreground' : 'text-muted'}`}>
+                {step.label}
+              </span>
+            </div>
+            {/* Línea conectora */}
+            {i < STEPS.length - 1 && (
+              <div className={[
+                'flex-1 h-px mx-2 mb-4',
+                i < currentIndex ? 'bg-brand' : 'bg-border',
+              ].join(' ')} />
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ─── Step 1: Resumen ─────────────────────────────────────
+function StepReview({ onNext }: { onNext: () => void }) {
+  const { items, total, updateQuantity } = useCart()
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-foreground font-semibold text-base">Tu orden</h2>
+        <p className="text-muted text-xs mt-0.5">Revisa los productos antes de continuar</p>
+      </div>
+
+      <div className="bg-surface border border-border rounded-xl overflow-hidden">
+        {items.map(item => (
+          <div key={item.id} className="flex items-start gap-3 px-4 py-3 border-b border-border last:border-0">
+            <div className="flex-1 min-w-0">
+              <p className="text-foreground text-sm font-medium">{item.name}</p>
+              {Object.values(item.variantLabels).length > 0 && (
+                <p className="text-muted text-xs mt-0.5">{Object.values(item.variantLabels).join(' · ')}</p>
+              )}
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                className="w-6 h-6 rounded-full border border-border text-secondary text-xs flex items-center justify-center hover:border-border-strong"
+              >−</button>
+              <span className="text-foreground text-xs font-medium w-4 text-center">{item.quantity}</span>
+              <button
+                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                className="w-6 h-6 rounded-full border border-border text-secondary text-xs flex items-center justify-center hover:border-border-strong"
+              >+</button>
+            </div>
+            <span className="text-foreground text-sm font-semibold shrink-0">${item.subtotal}</span>
+          </div>
+        ))}
+
+        <div className="flex justify-between px-4 py-3 bg-elevated">
+          <span className="text-secondary text-sm">Subtotal</span>
+          <span className="text-foreground text-sm font-semibold">${total}</span>
+        </div>
+      </div>
+
+      <Button fullWidth size="lg" onClick={onNext} disabled={items.length === 0}>
+        Continuar
+      </Button>
+    </div>
+  )
+}
+
+// ─── Step 2: Método de entrega ───────────────────────────
+function StepDelivery({
+  selected, onSelect, onNext, onBack,
+}: {
+  selected: DeliveryMethodId
+  onSelect: (id: DeliveryMethodId) => void
+  onNext: () => void
+  onBack: () => void
+}) {
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-foreground font-semibold text-base">¿Cómo lo recibes?</h2>
+        <p className="text-muted text-xs mt-0.5">Elige el método de entrega</p>
+      </div>
+
+      <div className="space-y-2">
+        {ordersData.deliveryMethods.map(method => (
+          <button
+            key={method.id}
+            onClick={() => onSelect(method.id as DeliveryMethodId)}
+            className={[
+              'w-full flex items-center justify-between px-4 py-4 rounded-xl border text-left transition-colors',
+              selected === method.id
+                ? 'border-brand bg-brand/5'
+                : 'border-border bg-surface hover:border-border-strong',
+            ].join(' ')}
+          >
+            <div>
+              <p className={`text-sm font-medium ${selected === method.id ? 'text-brand' : 'text-foreground'}`}>
+                {method.label}
+              </p>
+              <p className="text-xs text-muted mt-0.5">{method.eta}</p>
+            </div>
+            <span className="text-sm text-secondary shrink-0">
+              {method.price === 0 ? 'Gratis' : `+$${method.price}`}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <div className="flex gap-3">
+        <Button variant="ghost" size="lg" onClick={onBack} className="flex-1">Atrás</Button>
+        <Button size="lg" onClick={onNext} className="flex-1">Continuar</Button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Step 3: Datos del cliente ───────────────────────────
+function StepCustomer({
+  form, errors, deliveryMethod,
+  onChange, onNext, onBack,
+}: {
+  form: FormState
+  errors: Partial<FormState>
+  deliveryMethod: DeliveryMethodId
+  onChange: (key: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
+  onNext: () => void
+  onBack: () => void
+}) {
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-foreground font-semibold text-base">Tus datos</h2>
+        <p className="text-muted text-xs mt-0.5">Para coordinar tu pedido</p>
+      </div>
+
+      <div className="space-y-3">
+        <Input label="Nombre" placeholder="¿Cómo te llamamos?"
+          value={form.name} onChange={onChange('name')} error={errors.name} />
+        <Input label="Teléfono" placeholder="10 dígitos" type="tel"
+          value={form.phone} onChange={onChange('phone')} error={errors.phone} />
+        {deliveryMethod === 'table' && (
+          <Input label="Número de mesa" placeholder="Ej. 4"
+            value={form.tableNumber} onChange={onChange('tableNumber')} error={errors.tableNumber} />
+        )}
+        {deliveryMethod === 'delivery' && (
+          <Input label="Dirección de entrega" placeholder="Calle, número, colonia"
+            value={form.address} onChange={onChange('address')} error={errors.address} />
+        )}
+        <Textarea label="Notas (opcional)" placeholder="Alergias, preferencias..."
+          value={form.notes} onChange={onChange('notes')} />
+      </div>
+
+      <div className="flex gap-3">
+        <Button variant="ghost" size="lg" onClick={onBack} className="flex-1">Atrás</Button>
+        <Button size="lg" onClick={onNext} className="flex-1">Continuar</Button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Step 4: Pago ────────────────────────────────────────
+function StepPayment({
+  total, deliveryFee, submitting,
+  onPay, onBack,
+}: {
+  total: number
+  deliveryFee: number
+  submitting: boolean
+  onPay: () => void
+  onBack: () => void
+}) {
+  const orderTotal = total + deliveryFee
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-foreground font-semibold text-base">Pago</h2>
+        <p className="text-muted text-xs mt-0.5">Próximamente: pago con tarjeta vía Stripe</p>
+      </div>
+
+      {/* Stripe placeholder */}
+      <div className="bg-surface border border-border rounded-xl p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-secondary text-xs font-medium">Número de tarjeta</p>
+          <div className="flex gap-1">
+            {['VISA', 'MC'].map(b => (
+              <span key={b} className="text-xs text-muted border border-border rounded px-1.5 py-0.5">{b}</span>
+            ))}
+          </div>
+        </div>
+        <div className="bg-elevated border border-border rounded-lg px-3 py-2.5">
+          <p className="text-muted text-sm tracking-widest">•••• •••• •••• ••••</p>
+        </div>
+        <div className="flex gap-3">
+          <div className="flex-1 bg-elevated border border-border rounded-lg px-3 py-2.5">
+            <p className="text-muted text-xs">MM / AA</p>
+          </div>
+          <div className="w-24 bg-elevated border border-border rounded-lg px-3 py-2.5">
+            <p className="text-muted text-xs">CVV</p>
+          </div>
+        </div>
+        <p className="text-muted text-xs text-center pt-1">
+          Integración Stripe pendiente — demo en modo simulado
+        </p>
+      </div>
+
+      {/* Desglose */}
+      <div className="bg-surface border border-border rounded-xl px-4 py-3 space-y-2">
+        <div className="flex justify-between text-sm">
+          <span className="text-secondary">Subtotal</span>
+          <span className="text-foreground">${total}</span>
+        </div>
+        {deliveryFee > 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-secondary">Envío</span>
+            <span className="text-foreground">${deliveryFee}</span>
+          </div>
+        )}
+        <div className="flex justify-between font-semibold border-t border-border pt-2">
+          <span className="text-foreground">Total</span>
+          <span className="text-foreground">${orderTotal}</span>
+        </div>
+      </div>
+
+      <div className="flex gap-3">
+        <Button variant="ghost" size="lg" onClick={onBack} className="flex-1">Atrás</Button>
+        <Button size="lg" onClick={onPay} disabled={submitting} className="flex-1">
+          {submitting ? 'Procesando...' : `Pagar $${orderTotal}`}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Main ─────────────────────────────────────────────────
 export function CheckoutFlow() {
   const { items, total, clearCart } = useCart()
   const router = useRouter()
 
-  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethodId>('pickup')
-  const [form, setForm] = useState<FormState>({ name: '', phone: '', address: '', tableNumber: '', notes: '' })
-  const [errors, setErrors] = useState<Partial<FormState>>({})
-  const [submitting, setSubmitting] = useState(false)
+  const [step, setStep]                 = useState<StepId>('review')
+  const [deliveryMethod, setDelivery]   = useState<DeliveryMethodId>('pickup')
+  const [form, setForm]                 = useState<FormState>({ name: '', phone: '', address: '', tableNumber: '', notes: '' })
+  const [errors, setErrors]             = useState<Partial<FormState>>({})
+  const [submitting, setSubmitting]     = useState(false)
 
   const selectedMethod = ordersData.deliveryMethods.find(m => m.id === deliveryMethod)!
-  const orderTotal = total + selectedMethod.price
 
-  const patch = (key: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm(f => ({ ...f, [key]: e.target.value }))
-    if (errors[key]) setErrors(err => ({ ...err, [key]: undefined }))
-  }
+  const patchField = (key: keyof FormState) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setForm(f => ({ ...f, [key]: e.target.value }))
+      if (errors[key]) setErrors(err => ({ ...err, [key]: undefined }))
+    }
 
-  const validate = (): Partial<FormState> => {
+  const validateCustomer = (): Partial<FormState> => {
     const e: Partial<FormState> = {}
     if (!form.name.trim())  e.name  = 'Requerido'
     if (!form.phone.trim()) e.phone = 'Requerido'
@@ -43,106 +310,70 @@ export function CheckoutFlow() {
     return e
   }
 
-  const handleSubmit = async () => {
-    const newErrors = validate()
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
-      return
-    }
+  const goToCustomer = () => {
+    const errs = validateCustomer()
+    // Clear and validate on advance only if coming back; validate fresh on submit
+    setErrors({})
+    setStep('customer')
+  }
+
+  const goToPayment = () => {
+    const errs = validateCustomer()
+    if (Object.keys(errs).length > 0) { setErrors(errs); return }
+    setStep('payment')
+  }
+
+  const handlePay = async () => {
     setSubmitting(true)
-    await new Promise(r => setTimeout(r, 700))
+    await new Promise(r => setTimeout(r, 900))
     const folio = `ORD-${String(Math.floor(Math.random() * 9000) + 1000)}`
     clearCart()
     router.push(`/order/${folio}`)
   }
 
+  if (items.length === 0 && step !== 'payment') {
+    return (
+      <div className="max-w-md mx-auto px-4 py-10 text-center space-y-4">
+        <p className="text-muted text-sm">Tu carrito está vacío.</p>
+        <Button variant="ghost" onClick={() => router.push('/')}>Volver al menú</Button>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-md mx-auto px-4 py-6 space-y-6">
-      <h1 className="text-foreground font-semibold text-lg">Tu pedido</h1>
+      <StepIndicator current={step} />
 
-      {/* Resumen */}
-      <div className="bg-surface border border-border rounded-xl p-4 space-y-2">
-        {items.map(item => (
-          <div key={item.id} className="flex justify-between gap-2 text-sm">
-            <span className="text-secondary">
-              {item.quantity}× {item.name}
-              {Object.values(item.variantLabels).length > 0 && (
-                <span className="text-muted"> · {Object.values(item.variantLabels).join(', ')}</span>
-              )}
-            </span>
-            <span className="text-foreground font-medium shrink-0">${item.subtotal}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Método de entrega */}
-      <div>
-        <p className="text-xs text-secondary font-medium mb-3">Método de entrega</p>
-        <div className="space-y-2">
-          {ordersData.deliveryMethods.map(method => (
-            <button
-              key={method.id}
-              onClick={() => setDeliveryMethod(method.id as DeliveryMethodId)}
-              className={[
-                'w-full flex items-center justify-between px-4 py-3 rounded-xl border text-left transition-colors',
-                deliveryMethod === method.id
-                  ? 'border-brand bg-brand/5'
-                  : 'border-border bg-surface hover:border-border-strong',
-              ].join(' ')}
-            >
-              <div>
-                <p className={`text-sm font-medium ${deliveryMethod === method.id ? 'text-brand' : 'text-foreground'}`}>
-                  {method.label}
-                </p>
-                <p className="text-xs text-muted mt-0.5">{method.eta}</p>
-              </div>
-              <span className="text-sm text-secondary shrink-0">
-                {method.price === 0 ? 'Gratis' : `$${method.price}`}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Datos del cliente */}
-      <div className="space-y-4">
-        <p className="text-xs text-secondary font-medium">Tus datos</p>
-        <Input label="Nombre" placeholder="¿Cómo te llamamos?"
-          value={form.name} onChange={patch('name')} error={errors.name} />
-        <Input label="Teléfono" placeholder="10 dígitos" type="tel"
-          value={form.phone} onChange={patch('phone')} error={errors.phone} />
-        {deliveryMethod === 'table' && (
-          <Input label="Número de mesa" placeholder="Ej. 4"
-            value={form.tableNumber} onChange={patch('tableNumber')} error={errors.tableNumber} />
-        )}
-        {deliveryMethod === 'delivery' && (
-          <Input label="Dirección de entrega" placeholder="Calle, número, colonia"
-            value={form.address} onChange={patch('address')} error={errors.address} />
-        )}
-        <Textarea label="Notas (opcional)" placeholder="Alergias, preferencias..."
-          value={form.notes} onChange={patch('notes')} />
-      </div>
-
-      {/* Total + Confirmar */}
-      <div className="space-y-3 pt-2">
-        <div className="flex justify-between text-sm">
-          <span className="text-secondary">Subtotal</span>
-          <span className="text-foreground">${total}</span>
-        </div>
-        {selectedMethod.price > 0 && (
-          <div className="flex justify-between text-sm">
-            <span className="text-secondary">Envío</span>
-            <span className="text-foreground">${selectedMethod.price}</span>
-          </div>
-        )}
-        <div className="flex justify-between font-semibold border-t border-border pt-3">
-          <span className="text-foreground">Total</span>
-          <span className="text-foreground">${orderTotal}</span>
-        </div>
-        <Button fullWidth size="lg" onClick={handleSubmit} disabled={submitting || items.length === 0}>
-          {submitting ? 'Enviando pedido...' : `Confirmar pedido · $${orderTotal}`}
-        </Button>
-      </div>
+      {step === 'review' && (
+        <StepReview onNext={() => setStep('delivery')} />
+      )}
+      {step === 'delivery' && (
+        <StepDelivery
+          selected={deliveryMethod}
+          onSelect={setDelivery}
+          onNext={() => setStep('customer')}
+          onBack={() => setStep('review')}
+        />
+      )}
+      {step === 'customer' && (
+        <StepCustomer
+          form={form}
+          errors={errors}
+          deliveryMethod={deliveryMethod}
+          onChange={patchField}
+          onNext={goToPayment}
+          onBack={() => setStep('delivery')}
+        />
+      )}
+      {step === 'payment' && (
+        <StepPayment
+          total={total}
+          deliveryFee={selectedMethod.price}
+          submitting={submitting}
+          onPay={handlePay}
+          onBack={() => setStep('customer')}
+        />
+      )}
     </div>
   )
 }
