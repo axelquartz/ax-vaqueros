@@ -14,7 +14,25 @@
 ## Componentes Requeridos para el Flujo del Pedido
 
 1. `ProductCard`: Tarjeta de producto limpia con selector de variante/cantidad.
-2. `CartDrawer`: Carrito lateral/inferior fluido con desglose de totales.
-3. `CheckoutFlow`: Formulario simplificado de pedido (datos de cliente + método de entrega).
-4. `OrderStatus`: Pantalla de confirmación con folio de pedido y estatus en tiempo real.
+2. `CartDrawer`: Barra persistente inferior, no bloqueante, expandible.
+3. `CheckoutFlow`: Stepper multi-paso — datos de cliente → método de entrega → pago → confirmación.
+4. `OrderStatus`: Pantalla de confirmación con folio, estatus en tiempo real y mapa de seguimiento.
 5. `MerchantPanel`: Vista básica de administración de pedidos entrantes.
+
+## Próximas Integraciones
+
+### Pasarela de Pagos
+- Rediseñar `CheckoutFlow` como stepper antes de integrar.
+- Candidatos: **Stripe** (recomendado), Conekta (OXXO), MercadoPago (LATAM).
+
+### Mapa de Seguimiento (`OrderMap`)
+- Mostrar mapa solo cuando `deliveryMethod === 'delivery'`.
+- Para pedidos en mostrador/mesa: mostrar solo progreso de estatus en texto.
+- Librería candidata: **Mapbox GL JS** o Google Maps SDK.
+- Seguimiento en tiempo real requiere WebSockets o polling — depende de backend real.
+- Por ahora: placeholder de mapa + simulación de movimiento con datos mock.
+
+## Dependencias de Backend (futuras)
+- Base de datos real (Supabase o similar) para pedidos persistentes.
+- WebSockets para estatus en tiempo real (repartidor + cocina).
+- GPS del repartidor para mapa live.
