@@ -405,15 +405,35 @@ export function CheckoutFlow() {
 
     setCreatingIntent(true)
     try {
+      const newFolio = `ORD-${String(Math.floor(Math.random() * 9000) + 1000)}`
       const res = await fetch('/api/checkout/payment-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: orderTotal }),
+        body: JSON.stringify({
+          amount: orderTotal,
+          folio:  newFolio,
+          deliveryMethod,
+          deliveryFee: selectedMethod.price,
+          customer: {
+            name:        form.name,
+            phone:       form.phone,
+            address:     form.address     || undefined,
+            tableNumber: form.tableNumber || undefined,
+            notes:       form.notes       || undefined,
+          },
+          items: items.map(i => ({
+            name:          i.name,
+            quantity:      i.quantity,
+            unitPrice:     i.unitPrice,
+            variantExtra:  i.variantExtra,
+            variantLabels: i.variantLabels,
+            subtotal:      i.subtotal,
+          })),
+        }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
 
-      const newFolio = `ORD-${String(Math.floor(Math.random() * 9000) + 1000)}`
       setFolio(newFolio)
       setClientSecret(data.clientSecret)
       setIsDemoMode(!!data.demo)
