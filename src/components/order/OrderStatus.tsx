@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { StatusTracker } from './StatusTracker'
+import { OrderMap } from './OrderMap'
 import ordersData from '@/data/orders.json'
 import type { Order } from '@/types/order'
 import type { BadgeColor } from '@/components/ui/Badge'
@@ -13,13 +15,17 @@ interface OrderStatusProps {
 
 export function OrderStatus({ order }: OrderStatusProps) {
   const router = useRouter()
-  const statusConfig = ordersData.statuses.find(s => s.id === order.status)
+  const statusConfig   = ordersData.statuses.find(s => s.id === order.status)
   const deliveryMethod = ordersData.deliveryMethods.find(m => m.id === order.deliveryMethod)
+  const isDelivery     = order.deliveryMethod === 'delivery'
+
+  // Mostrar mapa cuando el pedido está en camino o listo (solo domicilio)
+  const showMap = isDelivery && ['preparing', 'ready', 'delivered'].includes(order.status)
 
   return (
-    <div className="max-w-md mx-auto px-4 py-6 space-y-6">
+    <div className="max-w-md mx-auto px-4 py-6 space-y-4">
 
-      {/* Folio + estatus */}
+      {/* Folio + badge */}
       <div className="bg-surface border border-border rounded-xl p-5 text-center space-y-3">
         <p className="text-muted text-xs uppercase tracking-widest">Folio de pedido</p>
         <p className="text-foreground font-mono font-bold text-2xl tracking-widest">{order.id}</p>
@@ -30,20 +36,24 @@ export function OrderStatus({ order }: OrderStatusProps) {
           <p className="text-muted text-xs">{deliveryMethod.label} · {deliveryMethod.eta}</p>
         )}
         {order.customer.notes && (
-          <p className="text-secondary text-xs italic mt-1">"{order.customer.notes}"</p>
+          <p className="text-secondary text-xs italic">"{order.customer.notes}"</p>
         )}
       </div>
 
-      {/* Desglose de items */}
+      {/* Tracker de estatus */}
+      <StatusTracker currentStatus={order.status} isDelivery={isDelivery} />
+
+      {/* Mapa de seguimiento (solo domicilio en tránsito) */}
+      {showMap && <OrderMap />}
+
+      {/* Desglose del pedido */}
       <div className="bg-surface border border-border rounded-xl overflow-hidden">
         {order.items.map((item, i) => (
           <div key={i} className="flex justify-between items-start px-4 py-3 border-b border-border last:border-0">
             <div>
               <p className="text-foreground text-sm font-medium">{item.quantity}× {item.name}</p>
               {Object.values(item.variants).length > 0 && (
-                <p className="text-muted text-xs mt-0.5">
-                  {Object.values(item.variants).join(' · ')}
-                </p>
+                <p className="text-muted text-xs mt-0.5">{Object.values(item.variants).join(' · ')}</p>
               )}
             </div>
             <span className="text-foreground text-sm font-medium shrink-0">${item.subtotal}</span>
