@@ -1,0 +1,192 @@
+{
+  "categories": [
+    { "id": "tacos",        "label": "Tacos",        "emoji": "🌮" },
+    { "id": "burritos",     "label": "Burritos",     "emoji": "🌯" },
+    { "id": "quesadillas",  "label": "Quesadillas",  "emoji": "🧀" },
+    { "id": "bebidas",      "label": "Bebidas",      "emoji": "🥤" },
+    { "id": "extras",       "label": "Extras",       "emoji": "🫙" }
+  ],
+
+  "variants": {
+    "protein": {
+      "label": "Proteína",
+      "required": true,
+      "options": [
+        { "id": "pastor",   "label": "Al Pastor",    "price": 0 },
+        { "id": "asada",    "label": "Carne Asada",  "price": 5 },
+        { "id": "pollo",    "label": "Pollo",        "price": 0 },
+        { "id": "chorizo",  "label": "Chorizo",      "price": 0 },
+        { "id": "veggie",   "label": "Veggie",       "price": 0 }
+      ]
+    },
+    "size": {
+      "label": "Tamaño",
+      "required": true,
+      "options": [
+        { "id": "chico",    "label": "Chico",        "price": 0 },
+        { "id": "grande",   "label": "Grande",       "price": 20 }
+      ]
+    },
+    "tortilla": {
+      "label": "Tortilla",
+      "required": true,
+      "options": [
+        { "id": "maiz",     "label": "Maíz",         "price": 0 },
+        { "id": "harina",   "label": "Harina",       "price": 0 }
+      ]
+    },
+    "salsa": {
+      "label": "Salsa",
+      "required": false,
+      "options": [
+        { "id": "verde",    "label": "Verde",        "price": 0 },
+        { "id": "roja",     "label": "Roja",         "price": 0 },
+        { "id": "habanero", "label": "Habanero 🔥",  "price": 0 },
+        { "id": "sin",      "label": "Sin salsa",    "price": 0 }
+      ]
+    },
+    "drink_size": {
+      "label": "Tamaño",
+      "required": true,
+      "options": [
+        { "id": "chico",    "label": "Chico (355ml)", "price": 0 },
+        { "id": "grande",   "label": "Grande (600ml)","price": 10 }
+      ]
+    }
+  },
+
+  "products": [
+    {
+      "id": "taco-vaquero",
+      "categoryId": "tacos",
+      "name": "Taco Vaquero's",
+      "description": "Nuestro taco insignia. Doble tortilla de maíz, cebolla morada, cilantro fresco y salsa de la casa.",
+      "price": 35,
+      "available": true,
+      "featured": true,
+      "variantGroups": ["protein", "tortilla", "salsa"],
+      "image": null
+    },
+    {
+      "id": "taco-costilla",
+      "categoryId": "tacos",
+      "name": "Taco de Costilla",
+      "description": "Costilla de res deshebrada, lenta cocción 8 hrs, con cebolla caramelizada.",
+      "price": 45,
+      "available": true,
+      "featured": true,
+      "variantGroups": ["tortilla", "salsa"],
+      "image": null
+    },
+    {
+      "id": "taco-camaron",
+      "categoryId": "tacos",
+      "name": "Taco de Camarón",
+      "description": "Camarón a la plancha, repollo morado, mayo chipotle y limón.",
+      "price": 50,
+      "available": true,
+      "featured": false,
+      "variantGroups": ["tortilla", "salsa"],
+      "image": null
+    },
+    {
+      "id": "burrito-clasico",
+      "categoryId": "burritos",
+      "name": "Burrito Clásico",
+      "description": "Tortilla de harina grande, arroz, frijoles, pico de gallo y crema.",
+      "price": 95,
+      "available": true,
+      "featured": true,
+      "variantGroups": ["protein", "salsa"],
+      "image": null
+    },
+    {
+      "id": "burrito-monstruo",
+      "categoryId": "burritos",
+      "name": "Burrito Monstruo",
+      "description": "El doble. Mismo relleno del Clásico pero con guacamole y queso extra.",
+      "price": 130,
+      "available": true,
+      "featured": false,
+      "variantGroups": ["protein", "salsa"],
+      "image": null
+    },
+    {
+      "id": "quesadilla-sencilla",
+      "categoryId": "quesadillas",
+      "name": "Quesadilla Sencilla",
+      "description": "Tortilla de harina, queso Oaxaca fundido.",
+      "price": 55,
+      "available": true,
+      "featured": false,
+      "variantGroups": ["protein"],
+      "image": null
+    },
+    {
+      "id": "quesadilla-especial",
+      "categoryId": "quesadillas",
+      "name": "Quesadilla Especial",
+      "description": "Doble queso, rajas poblanas, hongos y epazote.",
+      "price": 75,
+      "available": true,
+      "featured": true,
+      "variantGroups": ["protein", "salsa"],
+      "image": null
+    },
+    {
+      "id": "agua-fresca",
+      "categoryId": "bebidas",
+      "name": "Agua Fresca",
+      "description": "Jamaica, horchata o tamarindo. Natural, sin conservadores.",
+      "price": 25,
+      "available": true,
+      "featured": false,
+      "variantGroups": ["drink_size"],
+      "variants": {
+        "flavor": {
+          "label": "Sabor",
+          "required": true,
+          "options": [
+            { "id": "jamaica",   "label": "Jamaica",   "price": 0 },
+            { "id": "horchata",  "label": "Horchata",  "price": 0 },
+            { "id": "tamarindo", "label": "Tamarindo", "price": 0 }
+          ]
+        }
+      },
+      "image": null
+    },
+    {
+      "id": "refresco",
+      "categoryId": "bebidas",
+      "name": "Refresco",
+      "description": "Coca-Cola, Sprite o Fanta. Lata 355ml.",
+      "price": 25,
+      "available": true,
+      "featured": false,
+      "variantGroups": ["drink_size"],
+      "image": null
+    },
+    {
+      "id": "guacamole",
+      "categoryId": "extras",
+      "name": "Guacamole",
+      "description": "Aguacate Hass, jitomate, cebolla, cilantro y limón. Porción individual.",
+      "price": 30,
+      "available": true,
+      "featured": false,
+      "variantGroups": [],
+      "image": null
+    },
+    {
+      "id": "elote-esquite",
+      "categoryId": "extras",
+      "name": "Esquite",
+      "description": "Elote desgranado, mayonesa, queso cotija, chile en polvo y limón.",
+      "price": 35,
+      "available": true,
+      "featured": false,
+      "variantGroups": [],
+      "image": null
+    }
+  ]
+}

@@ -1,0 +1,135 @@
+{
+  "deliveryMethods": [
+    { "id": "pickup",   "label": "Recoger en mostrador", "price": 0,  "eta": "15–20 min" },
+    { "id": "table",    "label": "Mesa",                 "price": 0,  "eta": "10–15 min" },
+    { "id": "delivery", "label": "Domicilio",            "price": 45, "eta": "35–50 min" }
+  ],
+
+  "statuses": [
+    { "id": "pending",    "label": "Recibido",      "color": "warning" },
+    { "id": "confirmed",  "label": "Confirmado",    "color": "brand"   },
+    { "id": "preparing",  "label": "Preparando",    "color": "brand"   },
+    { "id": "ready",      "label": "Listo",         "color": "success" },
+    { "id": "delivered",  "label": "Entregado",     "color": "success" },
+    { "id": "cancelled",  "label": "Cancelado",     "color": "error"   }
+  ],
+
+  "orders": [
+    {
+      "id": "ORD-0041",
+      "createdAt": "2024-11-19T14:32:00Z",
+      "updatedAt": "2024-11-19T14:35:00Z",
+      "status": "preparing",
+      "deliveryMethod": "pickup",
+      "customer": {
+        "name": "Carlos Mendoza",
+        "phone": "8112345678",
+        "notes": "Sin cebolla en los tacos, por favor."
+      },
+      "items": [
+        {
+          "productId": "taco-vaquero",
+          "name": "Taco Vaquero's",
+          "quantity": 3,
+          "unitPrice": 35,
+          "variants": { "protein": "pastor", "tortilla": "maiz", "salsa": "verde" },
+          "subtotal": 105
+        },
+        {
+          "productId": "agua-fresca",
+          "name": "Agua Fresca",
+          "quantity": 1,
+          "unitPrice": 25,
+          "variants": { "drink_size": "chico", "flavor": "jamaica" },
+          "subtotal": 25
+        }
+      ],
+      "subtotal": 130,
+      "deliveryFee": 0,
+      "total": 130
+    },
+    {
+      "id": "ORD-0042",
+      "createdAt": "2024-11-19T14:40:00Z",
+      "updatedAt": "2024-11-19T14:40:00Z",
+      "status": "pending",
+      "deliveryMethod": "delivery",
+      "customer": {
+        "name": "Sofía Reyes",
+        "phone": "8198765432",
+        "address": "Av. Constitución 450, Col. Centro, Monterrey",
+        "notes": ""
+      },
+      "items": [
+        {
+          "productId": "burrito-clasico",
+          "name": "Burrito Clásico",
+          "quantity": 2,
+          "unitPrice": 95,
+          "variants": { "protein": "asada", "salsa": "roja" },
+          "subtotal": 190
+        },
+        {
+          "productId": "guacamole",
+          "name": "Guacamole",
+          "quantity": 2,
+          "unitPrice": 30,
+          "variants": {},
+          "subtotal": 60
+        },
+        {
+          "productId": "refresco",
+          "name": "Refresco",
+          "quantity": 2,
+          "unitPrice": 25,
+          "variants": { "drink_size": "chico" },
+          "subtotal": 50
+        }
+      ],
+      "subtotal": 300,
+      "deliveryFee": 45,
+      "total": 345
+    },
+    {
+      "id": "ORD-0040",
+      "createdAt": "2024-11-19T14:10:00Z",
+      "updatedAt": "2024-11-19T14:28:00Z",
+      "status": "delivered",
+      "deliveryMethod": "table",
+      "customer": {
+        "name": "Mesa 4",
+        "phone": "",
+        "notes": "Extra servilletas"
+      },
+      "items": [
+        {
+          "productId": "quesadilla-especial",
+          "name": "Quesadilla Especial",
+          "quantity": 1,
+          "unitPrice": 75,
+          "variants": { "protein": "pollo", "salsa": "habanero" },
+          "subtotal": 75
+        },
+        {
+          "productId": "taco-costilla",
+          "name": "Taco de Costilla",
+          "quantity": 2,
+          "unitPrice": 45,
+          "variants": { "tortilla": "maiz", "salsa": "verde" },
+          "subtotal": 90
+        },
+        {
+          "productId": "elote-esquite",
+          "name": "Esquite",
+          "quantity": 1,
+          "unitPrice": 35,
+          "variants": {},
+          "subtotal": 35
+        }
+      ],
+      "subtotal": 200,
+      "deliveryFee": 0,
+      "total": 200
+    }
+  ]
+}
