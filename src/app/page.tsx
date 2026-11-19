@@ -8,7 +8,7 @@ import menuData from '@/data/menu.json'
 
 export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState('tacos')
-  const { itemCount, openCart } = useCart()
+  const { itemCount } = useCart()
 
   const products = menuData.products.filter(
     p => p.categoryId === activeCategory && p.available
@@ -24,20 +24,9 @@ export default function MenuPage() {
             <h1 className="text-foreground font-semibold text-sm tracking-wide">Vaquero's</h1>
             <p className="text-muted text-xs">Menú Digital</p>
           </div>
-
-          {/* Botón carrito */}
-          <button
-            onClick={openCart}
-            className="relative flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-surface hover:border-border-strong transition-colors"
-          >
-            <span className="text-secondary text-sm">🛒</span>
-            {itemCount > 0 && (
-              <>
-                <span className="text-foreground text-xs font-medium">{itemCount}</span>
-                <span className="absolute -top-1.5 -right-1.5 w-2 h-2 rounded-full bg-brand" />
-              </>
-            )}
-          </button>
+          {itemCount > 0 && (
+            <span className="text-muted text-xs">{itemCount} en carrito</span>
+          )}
         </div>
       </header>
 
@@ -64,8 +53,11 @@ export default function MenuPage() {
         </div>
       </div>
 
-      {/* Productos */}
-      <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-4 space-y-3">
+      {/* Productos — padding inferior para que la barra del carrito no tape el último item */}
+      <main className={[
+        'flex-1 max-w-2xl mx-auto w-full px-4 py-4 space-y-3',
+        itemCount > 0 ? 'pb-24' : '',
+      ].join(' ')}>
         {products.length === 0 && (
           <p className="text-muted text-sm text-center py-10">Sin productos disponibles</p>
         )}

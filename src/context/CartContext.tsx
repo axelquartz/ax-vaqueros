@@ -11,9 +11,6 @@ interface CartContextValue {
   clearCart: () => void
   total: number
   itemCount: number
-  isOpen: boolean
-  openCart: () => void
-  closeCart: () => void
 }
 
 const CartContext = createContext<CartContextValue | null>(null)
@@ -28,7 +25,6 @@ function buildCartItemId(productId: string, variants: Record<string, string>): s
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
-  const [isOpen, setIsOpen] = useState(false)
 
   const addItem = useCallback((item: Omit<CartItem, 'id'>) => {
     const id = buildCartItemId(item.productId, item.selectedVariants)
@@ -44,7 +40,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       return [...prev, { ...item, id }]
     })
-    setIsOpen(true)
   }, [])
 
   const removeItem = useCallback((id: string) => {
@@ -71,13 +66,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0)
 
   return (
-    <CartContext.Provider value={{
-      items, addItem, removeItem, updateQuantity, clearCart,
-      total, itemCount,
-      isOpen,
-      openCart: () => setIsOpen(true),
-      closeCart: () => setIsOpen(false),
-    }}>
+    <CartContext.Provider value={{ items, addItem, removeItem, updateQuantity, clearCart, total, itemCount }}>
       {children}
     </CartContext.Provider>
   )
