@@ -39,13 +39,13 @@ export function FolioActions({ folio }: { folio: string }) {
       <div className="flex gap-2">
         <button
           onClick={copy}
-          className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl border border-border bg-elevated text-secondary text-sm hover:border-border-strong hover:text-foreground transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-elevated text-secondary text-sm hover:border-border-strong hover:text-foreground transition-colors"
         >
           {copied ? '✓ Copiado' : '⎘ Copiar folio'}
         </button>
         <button
           onClick={share}
-          className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl border border-brand/40 bg-brand/5 text-brand text-sm hover:bg-brand/10 transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-brand/40 bg-brand/5 text-brand text-sm hover:bg-brand/10 transition-colors"
         >
           ↑ Compartir
         </button>

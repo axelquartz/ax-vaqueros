@@ -14,10 +14,16 @@ export function CartDrawer() {
   if (itemCount === 0) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 flex flex-col">
+    <div className="fixed bottom-0 left-0 right-0 z-50 flex flex-col animate-rise-in">
 
-      {/* Panel expandible — sin backdrop, no bloquea interacción */}
-      {expanded && (
+      {/* Panel expandible — sin backdrop, no bloquea interacción.
+          grid-rows 0fr↔1fr anima la altura real en ambas direcciones. */}
+      <div
+        className={`grid transition-[grid-template-rows,opacity] duration-[400ms] ease-sheet ${expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
+        inert={!expanded}
+        aria-hidden={!expanded}
+      >
+       <div className="min-h-0 overflow-hidden">
         <div className="bg-surface border-t border-x border-border rounded-t-2xl mx-0 max-h-[60vh] flex flex-col overflow-hidden">
 
           {/* Handle */}
@@ -70,13 +76,15 @@ export function CartDrawer() {
             ))}
           </div>
         </div>
-      )}
+       </div>
+      </div>
 
       {/* Barra persistente — siempre visible y clickeable */}
       <div className="bg-surface border-t border-border px-4 py-3 flex items-center gap-3">
         {/* Resumen — toca para expandir/colapsar */}
         <button
           onClick={() => setExpanded(e => !e)}
+          aria-expanded={expanded}
           className="flex items-center gap-2 flex-1 min-w-0"
         >
           <span className="text-brand text-sm">🛒</span>
@@ -84,12 +92,18 @@ export function CartDrawer() {
             {itemCount} {itemCount === 1 ? 'artículo' : 'artículos'}
           </span>
           <span className="text-muted text-xs">· ${total}</span>
-          <span className="text-muted text-xs ml-auto">{expanded ? '▼' : '▲'}</span>
+          {/* text-xs: más pequeño que el texto de los botones (text-sm) */}
+          <span className="ml-auto flex items-center gap-1 text-secondary text-xs font-medium whitespace-nowrap">
+            Ver pedido
+            <span
+              className={`text-[10px] transition-transform duration-300 ease-sheet ${expanded ? 'rotate-180' : ''}`}
+              aria-hidden
+            >▲</span>
+          </span>
         </button>
 
         {/* Botón de pedido — siempre visible */}
         <Button
-          size="md"
           onClick={() => router.push('/checkout')}
         >
           Hacer pedido

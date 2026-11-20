@@ -75,20 +75,20 @@ function StepIndicator({ current }: { current: StepId }) {
           <div key={step.id} className="flex items-center flex-1 last:flex-none">
             <div className="flex flex-col items-center gap-1">
               <div className={[
-                'w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold border transition-colors',
+                'w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold border transition-colors duration-300',
                 done   ? 'bg-brand border-brand text-inverse'             : '',
                 active ? 'bg-brand/10 border-brand text-brand'            : '',
                 !done && !active ? 'bg-elevated border-border text-muted' : '',
               ].join(' ')}>
                 {done ? '✓' : i + 1}
               </div>
-              <span className={`text-xs ${active ? 'text-foreground' : 'text-muted'}`}>
+              <span className={`text-xs transition-colors duration-300 ${active ? 'text-foreground' : 'text-muted'}`}>
                 {step.label}
               </span>
             </div>
             {i < STEPS.length - 1 && (
               <div className={[
-                'flex-1 h-px mx-2 mb-4',
+                'flex-1 h-px mx-2 mb-4 transition-colors duration-300',
                 i < currentIndex ? 'bg-brand' : 'bg-border',
               ].join(' ')} />
             )}
@@ -149,7 +149,7 @@ function StepReview({ onNext }: { onNext: () => void }) {
           <span className="text-foreground text-sm font-semibold">${total}</span>
         </div>
       </div>
-      <Button fullWidth size="lg" onClick={onNext} disabled={items.length === 0 || !open}>Continuar</Button>
+      <Button fullWidth onClick={onNext} disabled={items.length === 0 || !open}>Continuar</Button>
     </div>
   )
 }
@@ -183,8 +183,8 @@ function StepDelivery({ selected, onSelect, onNext, onBack }: {
         ))}
       </div>
       <div className="flex gap-3">
-        <Button variant="ghost" size="lg" onClick={onBack} className="flex-1">Atrás</Button>
-        <Button size="lg" onClick={onNext} className="flex-1">Continuar</Button>
+        <Button variant="ghost" onClick={onBack} className="flex-1">Atrás</Button>
+        <Button onClick={onNext} className="flex-1">Continuar</Button>
       </div>
     </div>
   )
@@ -233,8 +233,8 @@ function StepCustomer({ form, errors, deliveryMethod, onChange, onAddressChange,
           value={form.notes} onChange={onChange('notes')} />
       </div>
       <div className="flex gap-3">
-        <Button variant="ghost" size="lg" onClick={onBack} className="flex-1">Atrás</Button>
-        <Button size="lg" onClick={onNext} disabled={loading} className="flex-1">
+        <Button variant="ghost" onClick={onBack} className="flex-1">Atrás</Button>
+        <Button onClick={onNext} disabled={loading} className="flex-1">
           {loading ? 'Preparando pago...' : 'Continuar'}
         </Button>
       </div>
@@ -313,8 +313,8 @@ function DemoPaymentForm({ total, deliveryFee, folio, deliveryMethod, itemCount,
       </div>
 
       <div className="flex gap-3">
-        <Button variant="ghost" size="lg" onClick={onBack} disabled={submitting} className="flex-1">Atrás</Button>
-        <Button size="lg" onClick={handlePay} disabled={submitting} className="flex-1">
+        <Button variant="ghost" onClick={onBack} disabled={submitting} className="flex-1">Atrás</Button>
+        <Button onClick={handlePay} disabled={submitting} className="flex-1">
           {submitting ? 'Procesando...' : `Simular pago · $${orderTotal}`}
         </Button>
       </div>
@@ -399,8 +399,8 @@ function PaymentForm({ total, deliveryFee, folio, deliveryMethod, itemCount, onB
       </div>
 
       <div className="flex gap-3">
-        <Button variant="ghost" size="lg" onClick={onBack} disabled={submitting} className="flex-1">Atrás</Button>
-        <Button size="lg" onClick={handlePay} disabled={submitting || !stripe} className="flex-1">
+        <Button variant="ghost" onClick={onBack} disabled={submitting} className="flex-1">Atrás</Button>
+        <Button onClick={handlePay} disabled={submitting || !stripe} className="flex-1">
           {submitting ? 'Procesando...' : `Pagar $${orderTotal}`}
         </Button>
       </div>
@@ -521,47 +521,36 @@ export function CheckoutFlow() {
     <div className="max-w-md mx-auto px-4 py-6 space-y-6">
       <StepIndicator current={step} />
 
-      {step === 'review' && (
-        <StepReview onNext={() => setStep('delivery')} />
-      )}
-      {step === 'delivery' && (
-        <StepDelivery
-          selected={deliveryMethod}
-          onSelect={handleDeliveryChange}
-          onNext={() => setStep('customer')}
-          onBack={() => setStep('review')}
-        />
-      )}
-      {step === 'customer' && (
-        <StepCustomer
-          form={form}
-          errors={errors}
-          deliveryMethod={deliveryMethod}
-          onChange={patchField}
-          onAddressChange={handleAddressChange}
-          onAddressSelect={handleAddressSelect}
-          coords={coords}
-          onNext={goToPayment}
-          onBack={() => setStep('delivery')}
-          loading={creatingIntent}
-        />
-      )}
-      {step === 'payment' && clientSecret && (
-        isDemoMode ? (
-          <DemoPaymentForm
-            total={total}
-            deliveryFee={selectedMethod.price}
-            folio={folio}
-            deliveryMethod={deliveryMethod}
-            itemCount={items.reduce((s, i) => s + i.quantity, 0)}
-            onBack={() => setStep('customer')}
+      {/* key={step} re-monta el contenido y dispara la transición en cada paso */}
+      <div key={step} className="animate-fade-up">
+        {step === 'review' && (
+          <StepReview onNext={() => setStep('delivery')} />
+        )}
+        {step === 'delivery' && (
+          <StepDelivery
+            selected={deliveryMethod}
+            onSelect={handleDeliveryChange}
+            onNext={() => setStep('customer')}
+            onBack={() => setStep('review')}
           />
-        ) : (
-          <Elements
-            stripe={stripePromise}
-            options={{ clientSecret, appearance: stripeAppearance }}
-          >
-            <PaymentForm
+        )}
+        {step === 'customer' && (
+          <StepCustomer
+            form={form}
+            errors={errors}
+            deliveryMethod={deliveryMethod}
+            onChange={patchField}
+            onAddressChange={handleAddressChange}
+            onAddressSelect={handleAddressSelect}
+            coords={coords}
+            onNext={goToPayment}
+            onBack={() => setStep('delivery')}
+            loading={creatingIntent}
+          />
+        )}
+        {step === 'payment' && clientSecret && (
+          isDemoMode ? (
+            <DemoPaymentForm
               total={total}
               deliveryFee={selectedMethod.price}
               folio={folio}
@@ -569,9 +558,23 @@ export function CheckoutFlow() {
               itemCount={items.reduce((s, i) => s + i.quantity, 0)}
               onBack={() => setStep('customer')}
             />
-          </Elements>
-        )
-      )}
+          ) : (
+            <Elements
+              stripe={stripePromise}
+              options={{ clientSecret, appearance: stripeAppearance }}
+            >
+              <PaymentForm
+                total={total}
+                deliveryFee={selectedMethod.price}
+                folio={folio}
+                deliveryMethod={deliveryMethod}
+                itemCount={items.reduce((s, i) => s + i.quantity, 0)}
+                onBack={() => setStep('customer')}
+              />
+            </Elements>
+          )
+        )}
+      </div>
     </div>
   )
 }

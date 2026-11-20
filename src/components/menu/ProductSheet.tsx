@@ -11,12 +11,29 @@ interface ProductSheetProps {
   onClose: () => void
 }
 
+/** Debe coincidir con --animate-sheet-out en globals.css */
+const EXIT_MS = 240
+
 interface ResolvedGroup extends VariantGroup {
   id: string
 }
 
-export function ProductSheet({ product, onClose }: ProductSheetProps) {
+export function ProductSheet({ product: incoming, onClose }: ProductSheetProps) {
   const { addItem } = useCart()
+
+  // Conserva el último producto mientras corre la animación de salida
+  const [product, setProduct] = useState<Product | null>(incoming)
+  if (incoming && incoming !== product) setProduct(incoming)
+  const closing = !incoming && !!product
+
+  // Respaldo: si animationend no llega (CSS sin cargar, animación cancelada,
+  // pestaña en segundo plano), desmonta igual para no dejar el sheet bloqueando.
+  useEffect(() => {
+    if (!closing) return
+    const t = setTimeout(() => setProduct(null), EXIT_MS + 80)
+    return () => clearTimeout(t)
+  }, [closing])
+
   const [quantity, setQuantity] = useState(1)
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({})
 
@@ -48,7 +65,8 @@ export function ProductSheet({ product, onClose }: ProductSheetProps) {
       return
     }
     setSelectedVariants(prev => {
-      const current = getSelectedIds(groupId)
+      // Lee de `prev` (no del render) para no perder toques rápidos consecutivos
+      const current = prev[groupId] ? prev[groupId].split(',').filter(Boolean) : []
       const next = current.includes(optionId)
         ? current.filter(x => x !== optionId)
         : [...current, optionId]
@@ -112,12 +130,17 @@ export function ProductSheet({ product, onClose }: ProductSheetProps) {
     <>
       {/* Overlay */}
       <div
-        className="fixed inset-0 bg-black/60 z-40"
+        className={`fixed inset-0 bg-black/60 z-[60] ${closing ? 'animate-fade-out pointer-events-none' : 'animate-fade-in'}`}
         onClick={onClose}
       />
 
       {/* Sheet */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-surface rounded-t-2xl max-h-[85vh] flex flex-col">
+      <div
+        className={`fixed bottom-0 left-0 right-0 z-[70] bg-surface rounded-t-2xl max-h-[85vh] flex flex-col shadow-[0_-8px_32px_rgba(0,0,0,0.5)] will-change-transform ${closing ? 'animate-sheet-out pointer-events-none' : 'animate-sheet-in'}`}
+        onAnimationEnd={e => {
+          if (closing && e.target === e.currentTarget) setProduct(null)
+        }}
+      >
 
         {/* Handle + close */}
         <div className="relative flex justify-center items-center pt-3 pb-2 px-4 shrink-0">
@@ -131,7 +154,7 @@ export function ProductSheet({ product, onClose }: ProductSheetProps) {
         </div>
 
         {/* Scrollable content */}
-        <div className="overflow-y-auto px-4 pb-8 space-y-4">
+        <div className="overflow-y-auto overscroll-contain px-4 pb-4 space-y-4 min-h-0">
 
           {/* Producto */}
           <div className="flex gap-3 items-start pt-1">
@@ -158,20 +181,24 @@ export function ProductSheet({ product, onClose }: ProductSheetProps) {
           {/* Variantes */}
           {variantGroups.map(group => (
             <div key={group.id}>
-              <p className="text-xs text-secondary font-medium mb-2">
+              <p className="text-xs text-secondary font-medium mb-2.5">
                 {group.label}
                 {group.required && <span className="text-error ml-1">*</span>}
                 {group.multi && <span className="text-muted ml-1 font-normal">(varios)</span>}
               </p>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-2">
                 {group.options.map((option: VariantOption) => (
                   <button
                     key={option.id}
                     onClick={() => handleVariantSelect(group.id, option.id, group.multi)}
+                    aria-pressed={isOptionSelected(group.id, option.id, group.multi)}
                     className={[
-                      'px-2.5 py-1 rounded-full text-xs border transition-colors',
+                      // Mobile-first: 40px de alto mínimo (área táctil) y texto legible.
+                      // font-medium en ambos estados para que el chip no cambie de ancho al seleccionarlo.
+                      'inline-flex items-center min-h-10 px-4 rounded-full text-sm font-medium border',
+                      'transition-[color,background-color,border-color,transform] duration-150 ease-out active:scale-[0.96]',
                       isOptionSelected(group.id, option.id, group.multi)
-                        ? 'bg-brand text-inverse border-brand font-medium'
+                        ? 'bg-brand text-inverse border-brand'
                         : 'bg-elevated border-border text-secondary hover:border-border-strong hover:text-foreground',
                     ].join(' ')}
                   >
@@ -182,9 +209,15 @@ export function ProductSheet({ product, onClose }: ProductSheetProps) {
               </div>
             </div>
           ))}
+        </div>
 
+        {/* Footer fijo: siempre visible aunque haya muchas variantes */}
+        <div
+          className="shrink-0 border-t border-border-subtle px-4 pt-3"
+          style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
+        >
           {/* Cantidad + Agregar */}
-          <div className="flex items-center justify-between pt-2">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setQuantity(q => Math.max(1, q - 1))}
@@ -198,7 +231,6 @@ export function ProductSheet({ product, onClose }: ProductSheetProps) {
             </div>
 
             <Button
-              size="sm"
               onClick={handleAddToCart}
               disabled={hasRequired && !allRequiredSelected}
             >

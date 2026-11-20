@@ -33,7 +33,7 @@ export function AnnouncementBanner() {
   }
 
   return (
-    <div className={`border-b px-4 py-2.5 flex items-center gap-3 ${styles[type]}`}>
+    <div className={`border-b px-4 py-2.5 flex items-center gap-3 animate-fade-in ${styles[type]}`}>
       <p className="flex-1 text-xs font-medium leading-snug">
         {announcementsData.message}
       </p>

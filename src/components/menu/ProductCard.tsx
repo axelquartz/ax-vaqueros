@@ -10,7 +10,7 @@ interface ProductCardProps {
 export function ProductCard({ product, onSelect }: ProductCardProps) {
   return (
     <div
-      className="flex flex-col rounded-2xl overflow-hidden bg-surface cursor-pointer"
+      className="flex flex-col rounded-2xl overflow-hidden bg-surface cursor-pointer transition-transform duration-200 ease-out active:scale-[0.98]"
       onClick={() => onSelect(product)}
     >
       {/* Imagen */}

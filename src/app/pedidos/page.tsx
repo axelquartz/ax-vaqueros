@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { readOrders } from '@/lib/orderHistory'
 import type { SavedOrder } from '@/lib/orderHistory'
 import ordersData from '@/data/orders.json'
+import Link from 'next/link'
+import { Logo } from '@/components/brand/Logo'
 
 export default function PedidosPage() {
   const router = useRouter()
@@ -42,6 +44,9 @@ export default function PedidosPage() {
           </button>
           <span className="text-border">|</span>
           <h1 className="text-foreground text-sm font-medium">Mis pedidos</h1>
+          <Link href="/" aria-label="Vaquero's — Inicio" className="ml-auto shrink-0">
+            <Logo variant="small" className="h-7" />
+          </Link>
         </div>
       </header>
 

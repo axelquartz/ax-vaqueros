@@ -10,6 +10,8 @@ import { useCart } from '@/context/CartContext'
 import { isStoreOpen, getStoreStatusText } from '@/lib/storeHours'
 import menuData from '@/data/menu.json'
 import type { Product } from '@/types/menu'
+import Link from 'next/link'
+import { Logo } from '@/components/brand/Logo'
 
 export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState('todos')
@@ -33,10 +35,11 @@ export default function MenuPage() {
       {/* Header */}
       <header className="sticky top-0 z-30 bg-background/90 backdrop-blur-md border-b border-border">
         <div className="max-w-[90vw] mx-auto px-4 h-14 flex items-center justify-between">
-          <div>
-            <h1 className="text-foreground font-bold text-lg tracking-wide">Vaquero's</h1>
-            <p className="text-muted text-xs">Menú Digital</p>
-          </div>
+          <Link href="/" aria-label="Vaquero's — Menú Digital" className="shrink-0">
+            <h1 className="sr-only">{"Vaquero's — Menú Digital"}</h1>
+            <Logo variant="small" className="h-8 sm:hidden" />
+            <Logo variant="long" className="hidden sm:block h-6" />
+          </Link>
           <div className="flex items-center gap-3">
             {storeStatus && (
               <span className={`text-xs font-medium ${storeOpen ? 'text-green-400' : 'text-muted'}`}>

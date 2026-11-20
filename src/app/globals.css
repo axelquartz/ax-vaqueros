@@ -6,6 +6,9 @@
    ───────────────────────────────────────────── */
 
 :root {
+  /* Dark mode por default: controles nativos, scrollbars y autofill en oscuro */
+  color-scheme: dark;
+
   /* Brand */
   --brand:         #C9A96E;  /* Gold principal */
   --brand-light:   #DEC08A;  /* Gold hover / highlight */
@@ -73,6 +76,39 @@
   --radius-lg:           0.75rem;
   --radius-xl:           1rem;
   --radius-full:         9999px;
+}
+
+/* ─── Motion ───
+   Curva y duraciones estándar de bottom sheets (iOS / Material 3).
+   Entradas con desaceleración, salidas más cortas.
+   ─────────────── */
+@theme {
+  --ease-sheet:   cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-exit:    cubic-bezier(0.4, 0, 1, 1);
+
+  --animate-sheet-in:  sheet-in 400ms var(--ease-sheet) both;
+  --animate-sheet-out: sheet-out 240ms var(--ease-exit) both;
+  --animate-fade-in:   fade-in 300ms ease-out both;
+  --animate-fade-out:  fade-out 240ms ease-in both;
+  --animate-fade-up:   fade-up 280ms var(--ease-sheet) both;
+  --animate-rise-in:   rise-in 400ms var(--ease-sheet) both;
+
+  @keyframes sheet-in  { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  @keyframes sheet-out { from { transform: translateY(0); }    to { transform: translateY(100%); } }
+  @keyframes fade-in   { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes fade-out  { from { opacity: 1; } to { opacity: 0; } }
+  @keyframes fade-up   { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes rise-in   { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+}
+
+/* Respeta "Reducir movimiento" del sistema. Duración mínima (no 'none')
+   para que animationend/transitionend sigan disparándose. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* ─── Base ─── */

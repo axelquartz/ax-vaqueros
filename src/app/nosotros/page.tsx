@@ -3,6 +3,8 @@
 import dynamic from 'next/dynamic'
 import businessData from '@/data/business.json'
 import hoursData from '@/data/hours.json'
+import Link from 'next/link'
+import { Logo } from '@/components/brand/Logo'
 
 const CheckoutMap = dynamic(
   () => import('@/components/checkout/CheckoutMap').then(m => m.CheckoutMap),
@@ -36,7 +38,9 @@ export default function NosotrosPage() {
       {/* Navbar */}
       <header className="sticky top-0 z-30 bg-background/90 backdrop-blur-md border-b border-border">
         <div className="max-w-[90vw] mx-auto px-4 h-14 flex items-center justify-between">
-          <a href="/" className="text-foreground font-bold text-lg tracking-wide">Vaquero's</a>
+          <Link href="/" aria-label="Vaquero's — Inicio" className="shrink-0">
+            <Logo variant="long" className="h-5 sm:h-6" />
+          </Link>
           <a href="/" className="text-muted hover:text-foreground transition-colors text-xs">← Menú</a>
         </div>
       </header>

@@ -118,7 +118,7 @@ export function MerchantPanel() {
               <div className="flex items-center justify-between px-4 py-3 border-t border-border">
                 <span className="text-foreground font-semibold text-sm">${order.total}</span>
                 {nextLabel && (
-                  <Button size="sm" onClick={() => advanceStatus(order.id)}>
+                  <Button onClick={() => advanceStatus(order.id)}>
                     Marcar como {nextLabel}
                   </Button>
                 )}

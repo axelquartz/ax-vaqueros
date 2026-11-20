@@ -59,11 +59,13 @@ function DeliveryMap() {
   const restaurantIcon = L.divIcon({
     className: '',
     html: `<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
-      <div style="background:#C9A96E;color:#0C0C0C;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.5)">Vaquero's</div>
+      <div style="background:#0C0C0C;border:1px solid #C9A96E;padding:5px 10px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.6);line-height:0">
+        <img src="/images/brand/logo-small.png" alt="Vaquero's" style="height:18px;width:auto;display:block" />
+      </div>
       <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #C9A96E"></div>
     </div>`,
-    iconSize:   [80, 32],
-    iconAnchor: [40, 32],
+    iconSize:   [62, 36],
+    iconAnchor: [31, 36],
   })
 
   const customerIcon = L.divIcon({
