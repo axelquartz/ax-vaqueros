@@ -113,20 +113,28 @@ export function ProductCard({ product }: ProductCardProps) {
 
       {/* Header — toca para expandir */}
       <button className="w-full text-left p-4" onClick={() => setExpanded(e => !e)}>
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          {/* Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <h3 className="text-foreground font-medium text-sm">{product.name}</h3>
               {product.featured && <span className="text-brand text-xs">★</span>}
             </div>
-            <p className="text-muted text-xs leading-relaxed line-clamp-2">{product.description}</p>
+            <p className="text-muted text-xs leading-relaxed line-clamp-2 mb-2">{product.description}</p>
+            <span className="text-foreground font-semibold text-sm">
+              ${product.price}
+              {variantExtra > 0 && <span className="text-muted font-normal text-xs ml-1">+${variantExtra}</span>}
+            </span>
           </div>
-          <div className="shrink-0 text-right">
-            <span className="text-foreground font-semibold text-sm">${product.price}</span>
-            {variantExtra > 0 && (
-              <p className="text-muted text-xs">+${variantExtra}</p>
-            )}
-          </div>
+          {/* Thumbnail */}
+          {product.image && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={product.image}
+              alt={product.name}
+              className="shrink-0 w-20 h-20 rounded-xl object-cover border border-border"
+            />
+          )}
         </div>
       </button>
 

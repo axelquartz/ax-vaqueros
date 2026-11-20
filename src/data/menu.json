@@ -52,14 +52,14 @@
       "required": false,
       "multi": true,
       "options": [
-        { "id": "catsup",      "label": "Catsup",       "price": 0 },
-        { "id": "crema",       "label": "Crema",        "price": 0 },
-        { "id": "mostaza",     "label": "Mostaza",      "price": 0 },
-        { "id": "mayonesa",    "label": "Mayonesa",     "price": 0 },
-        { "id": "ranch",       "label": "Ranch",        "price": 0 },
-        { "id": "chipotle",    "label": "Chipotle",     "price": 0 },
-        { "id": "costa_brava", "label": "Costa Brava",  "price": 0 },
-        { "id": "porky",       "label": "Porky",        "price": 0 }
+        { "id": "catsup",      "label": "Catsup",      "price": 0 },
+        { "id": "crema",       "label": "Crema",       "price": 0 },
+        { "id": "mostaza",     "label": "Mostaza",     "price": 0 },
+        { "id": "mayonesa",    "label": "Mayonesa",    "price": 0 },
+        { "id": "ranch",       "label": "Ranch",       "price": 0 },
+        { "id": "chipotle",    "label": "Chipotle",    "price": 0 },
+        { "id": "costa_brava", "label": "Costa Brava", "price": 0 },
+        { "id": "porky",       "label": "Porky",       "price": 0 }
       ]
     },
     "ingredientes": {
@@ -102,7 +102,7 @@
       "available": true,
       "featured": false,
       "variantGroups": ["sabor", "dip", "totopos"],
-      "image": null
+      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Alitas+5"
     },
     {
       "id": "alitas-8",
@@ -113,7 +113,7 @@
       "available": true,
       "featured": true,
       "variantGroups": ["sabor", "dip", "totopos"],
-      "image": null
+      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Alitas+8"
     },
     {
       "id": "alitas-10",
@@ -124,7 +124,7 @@
       "available": true,
       "featured": false,
       "variantGroups": ["sabor", "dip", "totopos"],
-      "image": null
+      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Alitas+10"
     },
 
     {
@@ -136,7 +136,7 @@
       "available": true,
       "featured": true,
       "variantGroups": ["sabor", "dip", "totopos"],
-      "image": null
+      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Boneless+10"
     },
     {
       "id": "boneless-16",
@@ -147,7 +147,7 @@
       "available": true,
       "featured": false,
       "variantGroups": ["sabor", "dip", "totopos"],
-      "image": null
+      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Boneless+16"
     },
     {
       "id": "boneless-20",
@@ -158,98 +158,7 @@
       "available": true,
       "featured": false,
       "variantGroups": ["sabor", "dip", "totopos"],
-      "image": null
-    },
-
-    {
-      "id": "combinado-chico",
-      "categoryId": "combinados",
-      "name": "Combinado Chico",
-      "description": "Combinado chico Vaquero's. Elige tus salsas favoritas.",
-      "price": 70,
-      "available": true,
-      "featured": false,
-      "variantGroups": ["salsas"],
-      "image": null
-    },
-    {
-      "id": "combinado-mediano",
-      "categoryId": "combinados",
-      "name": "Combinado Mediano",
-      "description": "Combinado mediano Vaquero's. Elige tus salsas favoritas.",
-      "price": 82,
-      "available": true,
-      "featured": false,
-      "variantGroups": ["salsas"],
-      "image": null
-    },
-    {
-      "id": "combinado-grande",
-      "categoryId": "combinados",
-      "name": "Combinado Grande",
-      "description": "Combinado grande Vaquero's. Elige tus salsas favoritas.",
-      "price": 108,
-      "available": true,
-      "featured": true,
-      "variantGroups": ["salsas"],
-      "image": null
-    },
-
-    {
-      "id": "banderilla-normal-queso",
-      "categoryId": "banderillas",
-      "name": "Banderilla Normal con Queso",
-      "description": "Banderilla estilo Vaquero's con queso. Personaliza tus salsas.",
-      "price": 70,
-      "available": true,
-      "featured": false,
-      "variantGroups": ["salsas"],
-      "image": null
-    },
-    {
-      "id": "banderilla-normal-sin",
-      "categoryId": "banderillas",
-      "name": "Banderilla Normal sin Queso",
-      "description": "Banderilla estilo Vaquero's sin queso. Personaliza tus salsas.",
-      "price": 45,
-      "available": true,
-      "featured": false,
-      "variantGroups": ["salsas"],
-      "image": null
-    },
-    {
-      "id": "banderilla-crunch-queso",
-      "categoryId": "banderillas",
-      "name": "Banderilla Crunch con Queso",
-      "description": "Banderilla crujiente estilo Vaquero's con queso. Personaliza tus salsas.",
-      "price": 85,
-      "available": true,
-      "featured": true,
-      "variantGroups": ["salsas"],
-      "image": null
-    },
-    {
-      "id": "banderilla-crunch-sin",
-      "categoryId": "banderillas",
-      "name": "Banderilla Crunch sin Queso",
-      "description": "Banderilla crujiente estilo Vaquero's sin queso. Personaliza tus salsas.",
-      "price": 60,
-      "available": true,
-      "featured": false,
-      "variantGroups": ["salsas"],
-      "image": null
-    },
-
-    {
-      "id": "tostilocos",
-      "categoryId": "tostilocos",
-      "name": "Tostilocos",
-      "description": "Tostitos preparados al estilo Vaquero's. Elige tus ingredientes favoritos o pide todo.",
-      "price": 80,
-      "available": true,
-      "featured": true,
-      "variantGroups": ["ingredientes"],
-      "image": null
+      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Boneless+20"
     },
 
     {
@@ -261,7 +170,120 @@
       "available": true,
       "featured": false,
       "variantGroups": [],
-      "image": null
+      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Dedos+5"
+    },
+    {
+      "id": "dedos-queso-8",
+      "categoryId": "dedos",
+      "name": "Dedos de Queso 8 pzas",
+      "description": "8 dedos de queso crujientes.",
+      "price": 160,
+      "available": true,
+      "featured": false,
+      "variantGroups": [],
+      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Dedos+8"
+    },
+    {
+      "id": "dedos-queso-10",
+      "categoryId": "dedos",
+      "name": "Dedos de Queso 10 pzas",
+      "description": "10 dedos de queso crujientes.",
+      "price": 190,
+      "available": true,
+      "featured": false,
+      "variantGroups": [],
+      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Dedos+10"
+    },
+
+    {
+      "id": "combinado-chico",
+      "categoryId": "combinados",
+      "name": "Combinado Chico",
+      "description": "Combinado chico Vaquero's. Elige tus salsas favoritas.",
+      "price": 70,
+      "available": true,
+      "featured": false,
+      "variantGroups": ["salsas"],
+      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Combinado"
+    },
+    {
+      "id": "combinado-mediano",
+      "categoryId": "combinados",
+      "name": "Combinado Mediano",
+      "description": "Combinado mediano Vaquero's. Elige tus salsas favoritas.",
+      "price": 82,
+      "available": true,
+      "featured": false,
+      "variantGroups": ["salsas"],
+      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Combinado"
+    },
+    {
+      "id": "combinado-grande",
+      "categoryId": "combinados",
+      "name": "Combinado Grande",
+      "description": "Combinado grande Vaquero's. Elige tus salsas favoritas.",
+      "price": 108,
+      "available": true,
+      "featured": true,
+      "variantGroups": ["salsas"],
+      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Combinado"
+    },
+
+    {
+      "id": "banderilla-normal-queso",
+      "categoryId": "banderillas",
+      "name": "Banderilla Normal con Queso",
+      "description": "Banderilla estilo Vaquero's con queso. Personaliza tus salsas.",
+      "price": 70,
+      "available": true,
+      "featured": false,
+      "variantGroups": ["salsas"],
+      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Banderilla"
+    },
+    {
+      "id": "banderilla-normal-sin",
+      "categoryId": "banderillas",
+      "name": "Banderilla Normal sin Queso",
+      "description": "Banderilla estilo Vaquero's sin queso. Personaliza tus salsas.",
+      "price": 45,
+      "available": true,
+      "featured": false,
+      "variantGroups": ["salsas"],
+      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Banderilla"
+    },
+    {
+      "id": "banderilla-crunch-queso",
+      "categoryId": "banderillas",
+      "name": "Banderilla Crunch con Queso",
+      "description": "Banderilla crujiente estilo Vaquero's con queso. Personaliza tus salsas.",
+      "price": 85,
+      "available": true,
+      "featured": true,
+      "variantGroups": ["salsas"],
+      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Crunch"
+    },
+    {
+      "id": "banderilla-crunch-sin",
+      "categoryId": "banderillas",
+      "name": "Banderilla Crunch sin Queso",
+      "description": "Banderilla crujiente estilo Vaquero's sin queso. Personaliza tus salsas.",
+      "price": 60,
+      "available": true,
+      "featured": false,
+      "variantGroups": ["salsas"],
+      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Crunch"
+    },
+
+    {
+      "id": "tostilocos",
+      "categoryId": "tostilocos",
+      "name": "Tostilocos",
+      "description": "Tostitos preparados al estilo Vaquero's. Elige tus ingredientes favoritos o pide todo.",
+      "price": 80,
+      "available": true,
+      "featured": true,
+      "variantGroups": ["ingredientes"],
+      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Tostilocos"
     },
 
     {
@@ -273,7 +295,7 @@
       "available": true,
       "featured": false,
       "variantGroups": [],
-      "image": null
+      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Papas"
     },
     {
       "id": "punio-papas-gajo",
@@ -284,7 +306,7 @@
       "available": true,
       "featured": false,
       "variantGroups": [],
-      "image": null
+      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Papas+Gajo"
     },
     {
       "id": "punio-salchipulpos",
@@ -295,7 +317,7 @@
       "available": true,
       "featured": false,
       "variantGroups": [],
-      "image": null
+      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Salchipulpos"
     },
 
     {
@@ -307,7 +329,7 @@
       "available": true,
       "featured": false,
       "variantGroups": ["drink_size"],
-      "image": null
+      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Refresco"
     },
     {
       "id": "agua",
@@ -318,7 +340,7 @@
       "available": true,
       "featured": false,
       "variantGroups": [],
-      "image": null
+      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Agua"
     }
   ]
 }
