@@ -28,8 +28,6 @@ export default function MenuPage() {
   return (
     <div className="min-h-screen flex flex-col">
 
-      <TopBanner />
-
       {/* Header */}
       <header className="sticky top-0 z-30 bg-background/90 backdrop-blur-md border-b border-border">
         <div className="max-w-[90vw] mx-auto px-4 h-14 flex items-center justify-between">
@@ -50,6 +48,7 @@ export default function MenuPage() {
         </div>
       </header>
 
+      <TopBanner />
       <AnnouncementBanner />
 
       {/* Categorías */}
