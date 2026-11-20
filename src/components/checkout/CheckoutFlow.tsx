@@ -13,8 +13,12 @@ import { Input, Textarea } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { useCart } from '@/context/CartContext'
 import ordersData from '@/data/orders.json'
+import dynamic from 'next/dynamic'
 import { AddressAutocomplete } from '@/components/checkout/AddressAutocomplete'
-import { CheckoutMap } from '@/components/checkout/CheckoutMap'
+const CheckoutMap = dynamic(
+  () => import('@/components/checkout/CheckoutMap').then(m => m.CheckoutMap),
+  { ssr: false }
+)
 
 // ─── Stripe setup ─────────────────────────────────────────
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)

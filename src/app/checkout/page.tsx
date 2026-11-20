@@ -1,5 +1,6 @@
 import { CheckoutFlow } from '@/components/checkout/CheckoutFlow'
 
+export const instant = false
 export const metadata = { title: "Checkout — Vaquero's" }
 
 export default function CheckoutPage() {

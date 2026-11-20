@@ -5,17 +5,6 @@ import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-// Pin personalizado — punto dorado con línea
-const pinIcon = L.divIcon({
-  className: '',
-  html: `<div style="display:flex;flex-direction:column;align-items:center">
-    <div style="width:14px;height:14px;background:#C9A96E;border:2px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.6)"></div>
-    <div style="width:2px;height:10px;background:#C9A96E;margin-top:-1px"></div>
-  </div>`,
-  iconSize:   [14, 24],
-  iconAnchor: [7, 24],
-})
-
 // Vuela suavemente al nuevo centro cuando cambian las coords
 function FlyTo({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap()
@@ -41,6 +30,17 @@ export function CheckoutMap({ lat, lng }: { lat: number; lng: number }) {
   }, [])
 
   if (!mounted) return null
+
+  // Definido dentro del componente para evitar ejecución a nivel de módulo en SSR
+  const pinIcon = L.divIcon({
+    className: '',
+    html: `<div style="display:flex;flex-direction:column;align-items:center">
+      <div style="width:14px;height:14px;background:#C9A96E;border:2px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.6)"></div>
+      <div style="width:2px;height:10px;background:#C9A96E;margin-top:-1px"></div>
+    </div>`,
+    iconSize:   [14, 24],
+    iconAnchor: [7, 24],
+  })
 
   return (
     <div className="rounded-xl overflow-hidden border border-border h-44">
