@@ -105,42 +105,48 @@ export function ProductCard({ product }: ProductCardProps) {
     setExpanded(false)
   }
 
-  return (
-    <div className={[
-      'bg-surface border rounded-xl overflow-hidden transition-all duration-200',
-      expanded ? 'border-brand/40' : 'border-border hover:border-border-strong',
-    ].join(' ')}>
+  const hasRequired = variantGroups.some(g => g.required)
 
-      {/* Header — toca para expandir */}
-      <button className="w-full text-left p-4" onClick={() => setExpanded(e => !e)}>
-        <div className="flex items-start gap-3">
-          {/* Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-foreground font-medium text-sm">{product.name}</h3>
-              {product.featured && <span className="text-brand text-xs">★</span>}
-            </div>
-            <p className="text-muted text-xs leading-relaxed line-clamp-2 mb-2">{product.description}</p>
-            <span className="text-foreground font-semibold text-sm">
-              ${product.price}
-              {variantExtra > 0 && <span className="text-muted font-normal text-xs ml-1">+${variantExtra}</span>}
-            </span>
+  return (
+    <div className="flex flex-col rounded-2xl overflow-hidden bg-surface">
+
+      {/* Imagen */}
+      <button className="relative w-full text-left" onClick={() => setExpanded(e => !e)}>
+        {product.image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={product.image}
+            alt={product.name}
+            className="w-full aspect-square object-cover"
+          />
+        ) : (
+          <div className="w-full aspect-square bg-elevated flex items-center justify-center">
+            <span className="text-4xl opacity-20">🍗</span>
           </div>
-          {/* Thumbnail */}
-          {product.image && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={product.image}
-              alt={product.name}
-              className="shrink-0 w-20 h-20 rounded-xl object-cover border border-border"
-            />
-          )}
-        </div>
+        )}
+
+        {/* Badge destacado */}
+        {product.featured && (
+          <span className="absolute top-2 left-2 bg-brand text-inverse text-xs font-semibold px-2 py-0.5 rounded-full leading-none">
+            Popular
+          </span>
+        )}
+
+        {/* Botón + */}
+        <span className="absolute bottom-2.5 right-2.5 w-9 h-9 rounded-full bg-foreground text-background flex items-center justify-center text-xl font-light shadow-lg">
+          +
+        </span>
+      </button>
+
+      {/* Info */}
+      <button className="text-left px-2.5 pt-2.5 pb-3 flex flex-col gap-0.5" onClick={() => setExpanded(e => !e)}>
+        <h3 className="text-foreground font-semibold text-sm leading-snug line-clamp-2">{product.name}</h3>
+        <p className="text-foreground font-bold text-sm mt-0.5">${product.price}</p>
       </button>
 
       {/* Panel expandible */}
       {expanded && (
-        <div className="border-t border-border px-4 pb-4 space-y-4 pt-3">
+        <div className="border-t border-border/50 px-3 pb-3 space-y-3 pt-3 bg-elevated">
 
           {/* Variantes */}
           {variantGroups.map(group => (
@@ -150,16 +156,16 @@ export function ProductCard({ product }: ProductCardProps) {
                 {group.required && <span className="text-error ml-1">*</span>}
                 {group.multi && <span className="text-muted ml-1 font-normal">(varios)</span>}
               </p>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {group.options.map((option: VariantOption) => (
                   <button
                     key={option.id}
                     onClick={() => handleVariantSelect(group.id, option.id, group.multi)}
                     className={[
-                      'px-3 py-1.5 rounded-full text-xs border transition-colors',
+                      'px-2.5 py-1 rounded-full text-xs border transition-colors',
                       isOptionSelected(group.id, option.id, group.multi)
                         ? 'bg-brand text-inverse border-brand font-medium'
-                        : 'bg-elevated border-border text-secondary hover:border-border-strong hover:text-foreground',
+                        : 'bg-surface border-border text-secondary hover:border-border-strong hover:text-foreground',
                     ].join(' ')}
                   >
                     {option.label}
@@ -172,26 +178,22 @@ export function ProductCard({ product }: ProductCardProps) {
 
           {/* Cantidad + Agregar */}
           <div className="flex items-center justify-between pt-1">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                className="w-8 h-8 rounded-full border border-border text-secondary hover:border-border-strong hover:text-foreground transition-colors flex items-center justify-center"
-              >
-                −
-              </button>
+                className="w-7 h-7 rounded-full border border-border text-secondary hover:border-border-strong flex items-center justify-center text-sm transition-colors"
+              >−</button>
               <span className="text-foreground font-medium text-sm w-4 text-center">{quantity}</span>
               <button
                 onClick={() => setQuantity(q => q + 1)}
-                className="w-8 h-8 rounded-full border border-border text-secondary hover:border-border-strong hover:text-foreground transition-colors flex items-center justify-center"
-              >
-                +
-              </button>
+                className="w-7 h-7 rounded-full border border-border text-secondary hover:border-border-strong flex items-center justify-center text-sm transition-colors"
+              >+</button>
             </div>
 
             <Button
               size="sm"
               onClick={handleAddToCart}
-              disabled={variantGroups.some(g => g.required) && !allRequiredSelected}
+              disabled={hasRequired && !allRequiredSelected}
             >
               Agregar · ${totalPrice}
             </Button>

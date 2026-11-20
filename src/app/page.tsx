@@ -75,21 +75,23 @@ export default function MenuPage() {
         </div>
       </div>
 
-      {/* Productos — padding inferior para que la barra del carrito no tape el último item */}
+      {/* Productos */}
       <main className={[
-        'flex-1 max-w-2xl mx-auto w-full px-4 py-4 space-y-3',
-        itemCount > 0 ? 'pb-24' : '',
+        'flex-1 w-full px-3 py-3',
+        itemCount > 0 ? 'pb-24' : 'pb-6',
       ].join(' ')}>
         {products.length === 0 && (
           <p className="text-muted text-sm text-center py-10">Sin productos disponibles</p>
         )}
-        {products.map(product => (
-          <ProductCard key={product.id} product={product} />
-        ))}
+        <div className="grid grid-cols-2 gap-3 max-w-2xl mx-auto">
+          {products.map(product => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
       </main>
 
       {/* Horario */}
-      <footer className={['max-w-2xl mx-auto w-full px-4 py-6', itemCount > 0 ? 'pb-28' : ''].join(' ')}>
+      <footer className={['w-full px-3 py-4 max-w-2xl mx-auto', itemCount > 0 ? 'pb-28' : ''].join(' ')}>
         <div className="bg-surface border border-border rounded-xl px-4 py-4 space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-foreground text-sm font-medium">Horario</p>
