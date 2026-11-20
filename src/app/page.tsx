@@ -34,7 +34,7 @@ export default function MenuPage() {
       <header className="sticky top-0 z-30 bg-background/90 backdrop-blur-md border-b border-border">
         <div className="max-w-[90vw] mx-auto px-4 h-14 flex items-center justify-between">
           <div>
-            <h1 className="text-foreground font-semibold text-sm tracking-wide">Vaquero's</h1>
+            <h1 className="text-foreground font-bold text-lg tracking-wide">Vaquero's</h1>
             <p className="text-muted text-xs">Menú Digital</p>
           </div>
           <div className="flex items-center gap-3">
@@ -61,7 +61,7 @@ export default function MenuPage() {
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
                 className={[
-                  'shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
+                  'shrink-0 flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold border transition-colors',
                   activeCategory === cat.id
                     ? 'bg-brand text-inverse border-brand'
                     : 'bg-surface border-border text-secondary hover:border-border-strong',

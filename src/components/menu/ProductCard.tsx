@@ -117,10 +117,10 @@ export function ProductCard({ product }: ProductCardProps) {
           <img
             src={product.image}
             alt={product.name}
-            className="w-full aspect-square object-cover"
+            className="w-full aspect-[4/3] object-cover"
           />
         ) : (
-          <div className="w-full aspect-square bg-elevated flex items-center justify-center">
+          <div className="w-full aspect-[4/3] bg-elevated flex items-center justify-center">
             <span className="text-4xl opacity-20">🍗</span>
           </div>
         )}
@@ -139,9 +139,9 @@ export function ProductCard({ product }: ProductCardProps) {
       </button>
 
       {/* Info */}
-      <button className="text-left px-2.5 pt-2.5 pb-3 flex flex-col gap-0.5" onClick={() => setExpanded(e => !e)}>
-        <h3 className="text-foreground font-semibold text-sm leading-snug line-clamp-2">{product.name}</h3>
-        <p className="text-foreground font-bold text-sm mt-0.5">${product.price}</p>
+      <button className="text-left px-3 pt-3 pb-3 flex flex-col gap-1" onClick={() => setExpanded(e => !e)}>
+        <h3 className="text-foreground font-bold text-base leading-snug line-clamp-2">{product.name}</h3>
+        <p className="text-brand font-bold text-base mt-0.5">${product.price}</p>
       </button>
 
       {/* Panel expandible */}
