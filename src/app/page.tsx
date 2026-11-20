@@ -6,7 +6,7 @@ import { CartDrawer } from '@/components/cart/CartDrawer'
 import { AnnouncementBanner } from '@/components/layout/AnnouncementBanner'
 import { TopBanner } from '@/components/layout/TopBanner'
 import { useCart } from '@/context/CartContext'
-import { isStoreOpen, getStoreStatusText, getAllSchedule } from '@/lib/storeHours'
+import { isStoreOpen, getStoreStatusText } from '@/lib/storeHours'
 import menuData from '@/data/menu.json'
 
 export default function MenuPage() {
@@ -14,9 +14,7 @@ export default function MenuPage() {
   const { itemCount } = useCart()
   const [storeOpen, setStoreOpen]       = useState(true)
   const [storeStatus, setStoreStatus]   = useState('')
-  const schedule = getAllSchedule()
-
-  useEffect(() => {
+useEffect(() => {
     setStoreOpen(isStoreOpen())
     setStoreStatus(getStoreStatusText())
   }, [])
@@ -92,32 +90,7 @@ export default function MenuPage() {
         </div>
       </main>
 
-      {/* Horario */}
-      <footer className={['w-full px-3 py-4 max-w-[90vw] mx-auto', itemCount > 0 ? 'pb-28' : ''].join(' ')}>
-        <div className="bg-surface border border-border rounded-xl px-4 py-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-foreground text-sm font-medium">Horario</p>
-            {storeStatus && (
-              <span className={`text-xs font-medium ${storeOpen ? 'text-green-400' : 'text-muted'}`}>
-                {storeOpen ? '● Abierto' : '● Cerrado'}
-              </span>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            {schedule.map(day => (
-              <div key={day.day} className="flex justify-between text-xs">
-                <span className="text-secondary w-24">{day.label}</span>
-                {day.open && day.close
-                  ? <span className="text-foreground">{day.open} – {day.close}</span>
-                  : <span className="text-muted">Cerrado</span>
-                }
-              </div>
-            ))}
-          </div>
-        </div>
-      </footer>
-
-      <CartDrawer />
+<CartDrawer />
     </div>
   )
 }
