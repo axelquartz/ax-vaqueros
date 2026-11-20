@@ -102,7 +102,7 @@
       "available": true,
       "featured": false,
       "variantGroups": ["sabor", "dip", "totopos"],
-      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Alitas+5"
+      "image": "/images/products/alitas-small.jpeg"
     },
     {
       "id": "alitas-8",
@@ -113,7 +113,7 @@
       "available": true,
       "featured": true,
       "variantGroups": ["sabor", "dip", "totopos"],
-      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Alitas+8"
+      "image": "/images/products/alitas-small.jpeg"
     },
     {
       "id": "alitas-10",
@@ -124,7 +124,7 @@
       "available": true,
       "featured": false,
       "variantGroups": ["sabor", "dip", "totopos"],
-      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Alitas+10"
+      "image": "/images/products/alitas-large.jpeg"
     },
 
     {
@@ -136,7 +136,7 @@
       "available": true,
       "featured": true,
       "variantGroups": ["sabor", "dip", "totopos"],
-      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Boneless+10"
+      "image": "/images/products/boneless.jpeg"
     },
     {
       "id": "boneless-16",
@@ -147,7 +147,7 @@
       "available": true,
       "featured": false,
       "variantGroups": ["sabor", "dip", "totopos"],
-      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Boneless+16"
+      "image": "/images/products/boneless-combo.jpeg"
     },
     {
       "id": "boneless-20",
@@ -158,7 +158,7 @@
       "available": true,
       "featured": false,
       "variantGroups": ["sabor", "dip", "totopos"],
-      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Boneless+20"
+      "image": "/images/products/boneless-combo.jpeg"
     },
 
     {
@@ -204,7 +204,7 @@
       "available": true,
       "featured": false,
       "variantGroups": ["salsas"],
-      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Combinado"
+      "image": "/images/products/combinado.jpeg"
     },
     {
       "id": "combinado-mediano",
@@ -215,7 +215,7 @@
       "available": true,
       "featured": false,
       "variantGroups": ["salsas"],
-      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Combinado"
+      "image": "/images/products/combinado.jpeg"
     },
     {
       "id": "combinado-grande",
@@ -226,7 +226,7 @@
       "available": true,
       "featured": true,
       "variantGroups": ["salsas"],
-      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Combinado"
+      "image": "/images/products/combinado.jpeg"
     },
 
     {
@@ -238,7 +238,7 @@
       "available": true,
       "featured": false,
       "variantGroups": ["salsas"],
-      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Banderilla"
+      "image": "/images/products/banderilla-normal.jpg"
     },
     {
       "id": "banderilla-normal-sin",
@@ -249,7 +249,7 @@
       "available": true,
       "featured": false,
       "variantGroups": ["salsas"],
-      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Banderilla"
+      "image": "/images/products/banderilla-normal.jpg"
     },
     {
       "id": "banderilla-crunch-queso",
@@ -260,7 +260,7 @@
       "available": true,
       "featured": true,
       "variantGroups": ["salsas"],
-      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Crunch"
+      "image": "/images/products/banderilla-crunch-hero.jpg"
     },
     {
       "id": "banderilla-crunch-sin",
@@ -271,7 +271,7 @@
       "available": true,
       "featured": false,
       "variantGroups": ["salsas"],
-      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Crunch"
+      "image": "/images/products/banderilla-crunch.jpg"
     },
 
     {
@@ -283,7 +283,7 @@
       "available": true,
       "featured": true,
       "variantGroups": ["ingredientes"],
-      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Tostilocos"
+      "image": "/images/products/tostilocos.jpg"
     },
 
     {
@@ -295,7 +295,7 @@
       "available": true,
       "featured": false,
       "variantGroups": [],
-      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Papas"
+      "image": "/images/products/papas-francesa.webp"
     },
     {
       "id": "punio-papas-gajo",
@@ -306,7 +306,7 @@
       "available": true,
       "featured": false,
       "variantGroups": [],
-      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Papas+Gajo"
+      "image": "/images/products/papas-gajo.jpeg"
     },
     {
       "id": "punio-salchipulpos",
@@ -317,7 +317,7 @@
       "available": true,
       "featured": false,
       "variantGroups": [],
-      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Salchipulpos"
+      "image": "/images/products/salchipulpos.webp"
     },
 
     {
