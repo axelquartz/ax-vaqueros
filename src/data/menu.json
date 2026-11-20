@@ -1,7 +1,9 @@
 {
   "categories": [
+    { "id": "todos",       "label": "Todos",       "emoji": "🤠" },
     { "id": "alitas",      "label": "Alitas",      "emoji": "🍗" },
     { "id": "boneless",    "label": "Boneless",    "emoji": "🍗" },
+    { "id": "dedos",       "label": "Dedos",       "emoji": "🧀" },
     { "id": "combinados",  "label": "Combinados",  "emoji": "🌭" },
     { "id": "banderillas", "label": "Banderillas", "emoji": "🌭" },
     { "id": "tostilocos",  "label": "Tostilocos",  "emoji": "🌶️" },
@@ -147,6 +149,17 @@
       "variantGroups": ["sabor", "dip", "totopos"],
       "image": null
     },
+    {
+      "id": "boneless-20",
+      "categoryId": "boneless",
+      "name": "Boneless 20 pzas",
+      "description": "20 piezas de boneless bañadas en tu sabor favorito. Incluye dip y totopos al gusto.",
+      "price": 290,
+      "available": true,
+      "featured": false,
+      "variantGroups": ["sabor", "dip", "totopos"],
+      "image": null
+    },
 
     {
       "id": "combinado-chico",
@@ -241,7 +254,7 @@
 
     {
       "id": "dedos-queso-5",
-      "categoryId": "extras",
+      "categoryId": "dedos",
       "name": "Dedos de Queso 5 pzas",
       "description": "5 dedos de queso crujientes.",
       "price": 170,
@@ -250,11 +263,12 @@
       "variantGroups": [],
       "image": null
     },
+
     {
-      "id": "papas-francesa",
+      "id": "punio-papas-francesa",
       "categoryId": "extras",
-      "name": "Papas a la Francesa",
-      "description": "Porción de papas a la francesa.",
+      "name": "Puño de Papas a la Francesa",
+      "description": "Puño de papas a la francesa.",
       "price": 35,
       "available": true,
       "featured": false,
@@ -262,10 +276,10 @@
       "image": null
     },
     {
-      "id": "papas-gajo",
+      "id": "punio-papas-gajo",
       "categoryId": "extras",
-      "name": "Papas Gajo",
-      "description": "Porción de papas gajo.",
+      "name": "Puño de Papas Gajo",
+      "description": "Puño de papas gajo.",
       "price": 35,
       "available": true,
       "featured": false,
@@ -273,10 +287,10 @@
       "image": null
     },
     {
-      "id": "salchipulpos",
+      "id": "punio-salchipulpos",
       "categoryId": "extras",
-      "name": "Salchipulpos",
-      "description": "Porción de salchipulpos.",
+      "name": "Puño de Salchipulpos",
+      "description": "Puño de salchipulpos.",
       "price": 35,
       "available": true,
       "featured": false,

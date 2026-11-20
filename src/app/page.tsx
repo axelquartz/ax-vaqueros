@@ -7,11 +7,11 @@ import { useCart } from '@/context/CartContext'
 import menuData from '@/data/menu.json'
 
 export default function MenuPage() {
-  const [activeCategory, setActiveCategory] = useState('alitas')
+  const [activeCategory, setActiveCategory] = useState('todos')
   const { itemCount } = useCart()
 
   const products = menuData.products.filter(
-    p => p.categoryId === activeCategory && p.available
+    p => (activeCategory === 'todos' || p.categoryId === activeCategory) && p.available
   )
 
   return (
