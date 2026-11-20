@@ -204,7 +204,7 @@
       "available": true,
       "featured": false,
       "variantGroups": ["salsas"],
-      "image": "/images/products/papas-gajo.jpeg"
+      "image": "/images/products/papas-gajo-nueva.jpeg"
     },
     {
       "id": "combinado-mediano",
@@ -238,7 +238,8 @@
       "available": true,
       "featured": false,
       "variantGroups": ["salsas"],
-      "image": "/images/products/banderilla-normal-queso.jpeg"
+      "image": "/images/products/banderilla-normal-queso.jpeg",
+      "imagePosition": "top"
     },
     {
       "id": "banderilla-normal-sin",
@@ -249,7 +250,8 @@
       "available": true,
       "featured": false,
       "variantGroups": ["salsas"],
-      "image": "/images/products/banderilla-normal.jpg"
+      "image": "/images/products/banderilla-normal.jpg",
+      "imagePosition": "top"
     },
     {
       "id": "banderilla-crunch-queso",
@@ -260,7 +262,7 @@
       "available": true,
       "featured": true,
       "variantGroups": ["salsas"],
-      "image": "/images/products/banderilla-crunch-hero.jpg"
+      "image": "/images/products/banderilla-crunch.jpg"
     },
     {
       "id": "banderilla-crunch-sin",
@@ -271,7 +273,7 @@
       "available": true,
       "featured": false,
       "variantGroups": ["salsas"],
-      "image": "/images/products/banderilla-crunch.jpg"
+      "image": "/images/products/banderilla-crunch-hero.jpg"
     },
 
     {

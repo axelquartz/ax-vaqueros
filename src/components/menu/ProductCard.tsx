@@ -117,7 +117,10 @@ export function ProductCard({ product }: ProductCardProps) {
           <img
             src={product.image}
             alt={product.name}
-            className="w-full aspect-[4/3] object-cover"
+            className={[
+              'w-full aspect-[4/3] object-cover',
+              product.imagePosition === 'top' ? 'object-top' : product.imagePosition === 'bottom' ? 'object-bottom' : 'object-center',
+            ].join(' ')}
           />
         ) : (
           <div className="w-full aspect-[4/3] bg-elevated flex items-center justify-center">
