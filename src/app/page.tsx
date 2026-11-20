@@ -32,7 +32,7 @@ export default function MenuPage() {
 
       {/* Header */}
       <header className="sticky top-0 z-30 bg-background/90 backdrop-blur-md border-b border-border">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+        <div className="max-w-[90vw] mx-auto px-4 h-14 flex items-center justify-between">
           <div>
             <h1 className="text-foreground font-semibold text-sm tracking-wide">Vaquero's</h1>
             <p className="text-muted text-xs">Menú Digital</p>
@@ -54,7 +54,7 @@ export default function MenuPage() {
 
       {/* Categorías */}
       <div className="sticky top-14 z-20 bg-background/90 backdrop-blur-md border-b border-border-subtle">
-        <div className="max-w-2xl mx-auto px-4">
+        <div className="max-w-[90vw] mx-auto px-4">
           <div className="flex gap-1 overflow-x-auto py-3 no-scrollbar">
             {menuData.categories.map(cat => (
               <button
@@ -83,7 +83,7 @@ export default function MenuPage() {
         {products.length === 0 && (
           <p className="text-muted text-sm text-center py-10">Sin productos disponibles</p>
         )}
-        <div className="grid grid-cols-2 gap-3 max-w-2xl mx-auto">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 max-w-[90vw] mx-auto w-full">
           {products.map(product => (
             <ProductCard key={product.id} product={product} />
           ))}
@@ -91,7 +91,7 @@ export default function MenuPage() {
       </main>
 
       {/* Horario */}
-      <footer className={['w-full px-3 py-4 max-w-2xl mx-auto', itemCount > 0 ? 'pb-28' : ''].join(' ')}>
+      <footer className={['w-full px-3 py-4 max-w-[90vw] mx-auto', itemCount > 0 ? 'pb-28' : ''].join(' ')}>
         <div className="bg-surface border border-border rounded-xl px-4 py-4 space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-foreground text-sm font-medium">Horario</p>
