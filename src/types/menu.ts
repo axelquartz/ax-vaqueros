@@ -22,7 +22,7 @@ export interface Product {
   variantGroups: string[]
   variants?: Record<string, VariantGroup>
   image: string | null
-  imagePosition?: 'top' | 'center' | 'bottom'
+  imagePosition?: string
 }
 
 export interface Category {

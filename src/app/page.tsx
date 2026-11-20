@@ -2,19 +2,23 @@
 
 import { useState, useEffect } from 'react'
 import { ProductCard } from '@/components/menu/ProductCard'
+import { ProductSheet } from '@/components/menu/ProductSheet'
 import { CartDrawer } from '@/components/cart/CartDrawer'
 import { AnnouncementBanner } from '@/components/layout/AnnouncementBanner'
 import { TopBanner } from '@/components/layout/TopBanner'
 import { useCart } from '@/context/CartContext'
 import { isStoreOpen, getStoreStatusText } from '@/lib/storeHours'
 import menuData from '@/data/menu.json'
+import type { Product } from '@/types/menu'
 
 export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState('todos')
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const { itemCount } = useCart()
-  const [storeOpen, setStoreOpen]       = useState(true)
-  const [storeStatus, setStoreStatus]   = useState('')
-useEffect(() => {
+  const [storeOpen, setStoreOpen]     = useState(true)
+  const [storeStatus, setStoreStatus] = useState('')
+
+  useEffect(() => {
     setStoreOpen(isStoreOpen())
     setStoreStatus(getStoreStatusText())
   }, [])
@@ -85,12 +89,21 @@ useEffect(() => {
         )}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 max-w-[90vw] mx-auto w-full">
           {products.map(product => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard
+              key={product.id}
+              product={product}
+              onSelect={setSelectedProduct}
+            />
           ))}
         </div>
       </main>
 
-<CartDrawer />
+      <ProductSheet
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+      />
+
+      <CartDrawer />
     </div>
   )
 }
