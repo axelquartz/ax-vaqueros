@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { StatusTracker } from './StatusTracker'
 import { OrderMap } from './OrderMap'
+import { FolioActions } from './FolioActions'
 import ordersData from '@/data/orders.json'
 import type { Order } from '@/types/order'
 import type { BadgeColor } from '@/components/ui/Badge'
@@ -39,6 +40,9 @@ export function OrderStatus({ order }: OrderStatusProps) {
           <p className="text-secondary text-xs italic">"{order.customer.notes}"</p>
         )}
       </div>
+
+      {/* Guardar folio */}
+      <FolioActions folio={order.id} />
 
       {/* Tracker de estatus */}
       <StatusTracker currentStatus={order.status} isDelivery={isDelivery} />

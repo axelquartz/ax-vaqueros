@@ -13,6 +13,7 @@ import { Input, Textarea } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { useCart } from '@/context/CartContext'
 import ordersData from '@/data/orders.json'
+import { saveOrder } from '@/lib/orderHistory'
 import dynamic from 'next/dynamic'
 import { AddressAutocomplete } from '@/components/checkout/AddressAutocomplete'
 const CheckoutMap = dynamic(
@@ -224,10 +225,12 @@ function StepCustomer({ form, errors, deliveryMethod, onChange, onAddressChange,
 }
 
 // ─── Step 4: Pago demo (sin Stripe) ──────────────────────
-function DemoPaymentForm({ total, deliveryFee, folio, onBack }: {
+function DemoPaymentForm({ total, deliveryFee, folio, deliveryMethod, itemCount, onBack }: {
   total: number
   deliveryFee: number
   folio: string
+  deliveryMethod: string
+  itemCount: number
   onBack: () => void
 }) {
   const router = useRouter()
@@ -238,6 +241,7 @@ function DemoPaymentForm({ total, deliveryFee, folio, onBack }: {
   const handlePay = async () => {
     setSubmitting(true)
     await new Promise(r => setTimeout(r, 900))
+    saveOrder({ folio, timestamp: new Date().toISOString(), total: orderTotal, deliveryMethod, itemCount })
     clearCart()
     router.push(`/order/${folio}`)
   }
@@ -301,10 +305,12 @@ function DemoPaymentForm({ total, deliveryFee, folio, onBack }: {
 }
 
 // ─── Step 4: Pago (dentro de Elements) ───────────────────
-function PaymentForm({ total, deliveryFee, folio, onBack }: {
+function PaymentForm({ total, deliveryFee, folio, deliveryMethod, itemCount, onBack }: {
   total: number
   deliveryFee: number
   folio: string
+  deliveryMethod: string
+  itemCount: number
   onBack: () => void
 }) {
   const stripe   = useStripe()
@@ -334,6 +340,7 @@ function PaymentForm({ total, deliveryFee, folio, onBack }: {
       setStripeError(error.message ?? 'Error al procesar el pago')
       setSubmitting(false)
     } else {
+      saveOrder({ folio, timestamp: new Date().toISOString(), total: orderTotal, deliveryMethod, itemCount })
       clearCart()
       router.push(`/order/${folio}`)
     }
@@ -527,6 +534,8 @@ export function CheckoutFlow() {
             total={total}
             deliveryFee={selectedMethod.price}
             folio={folio}
+            deliveryMethod={deliveryMethod}
+            itemCount={items.reduce((s, i) => s + i.quantity, 0)}
             onBack={() => setStep('customer')}
           />
         ) : (
@@ -538,6 +547,8 @@ export function CheckoutFlow() {
               total={total}
               deliveryFee={selectedMethod.price}
               folio={folio}
+              deliveryMethod={deliveryMethod}
+              itemCount={items.reduce((s, i) => s + i.quantity, 0)}
               onBack={() => setStep('customer')}
             />
           </Elements>

@@ -24,9 +24,9 @@ export default function MenuPage() {
             <h1 className="text-foreground font-semibold text-sm tracking-wide">Vaquero's</h1>
             <p className="text-muted text-xs">Menú Digital</p>
           </div>
-          {itemCount > 0 && (
-            <span className="text-muted text-xs">{itemCount} en carrito</span>
-          )}
+          <a href="/pedidos" className="text-muted hover:text-foreground transition-colors text-xs">
+            Mis pedidos
+          </a>
         </div>
       </header>
 
