@@ -17,25 +17,27 @@ interface Props {
 
 async function fetchSuggestions(query: string): Promise<Suggestion[]> {
   if (query.length < 3) return []
-  // Photon (OpenStreetMap) — gratis, sin API key, bbox = México
-  const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lang=es&bbox=-117.12,14.53,-86.74,32.72`
+  // Nominatim (OpenStreetMap) — gratis, sin API key, filtrado a México
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&countrycodes=mx&addressdetails=1`
   try {
-    const res  = await fetch(url)
-    const data = await res.json()
+    const res  = await fetch(url, {
+      headers: { 'User-Agent': 'ax-vaqueros/1.0 (food ordering app)' },
+    })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return data.features.map((f: any) => {
-      const p = f.properties
+    const data: any[] = await res.json()
+    return data.map(r => {
+      const a = r.address ?? {}
+      // Construir etiqueta corta: calle + número + colonia + ciudad + estado
       const parts = [
-        p.street ? (p.housenumber ? `${p.street} ${p.housenumber}` : p.street) : null,
-        p.name && p.name !== p.street ? p.name : null,
-        p.city || p.town || p.village,
-        p.state,
-        p.country,
+        a.road        ? (a.house_number ? `${a.road} ${a.house_number}` : a.road) : null,
+        a.neighbourhood || a.suburb || a.village || a.town,
+        a.city || a.municipality,
+        a.state,
       ].filter(Boolean)
       return {
-        label: parts.join(', '),
-        lat:   f.geometry.coordinates[1],
-        lng:   f.geometry.coordinates[0],
+        label: parts.length > 0 ? parts.join(', ') : (r.display_name as string),
+        lat:   parseFloat(r.lat),
+        lng:   parseFloat(r.lon),
       }
     })
   } catch {
