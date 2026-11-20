@@ -1,21 +1,65 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import {
-  APIProvider,
-  Map,
-  AdvancedMarker,
-} from '@vis.gl/react-google-maps'
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 
 // ─── Coordenadas mock — Monterrey ─────────────────────────
-const RESTAURANT: google.maps.LatLngLiteral = { lat: 25.6866, lng: -100.3161 }
-const CUSTOMER:   google.maps.LatLngLiteral = { lat: 25.6980, lng: -100.3295 }
+const RESTAURANT = { lat: 25.6866, lng: -100.3161 }
+const CUSTOMER   = { lat: 25.6980, lng: -100.3295 }
 
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t
 }
 
-// ─── Mapa con animación del repartidor ───────────────────
+// ─── Fix Leaflet default icon path (Next.js / Webpack) ────
+function fixLeafletIcons() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  delete (L.Icon.Default.prototype as any)._getIconUrl
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+    iconUrl:       'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    shadowUrl:     'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  })
+}
+
+// ─── Iconos personalizados ─────────────────────────────────
+const restaurantIcon = L.divIcon({
+  className: '',
+  html: `<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+    <div style="background:#C9A96E;color:#0C0C0C;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.5)">Vaquero's</div>
+    <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #C9A96E"></div>
+  </div>`,
+  iconSize:   [80, 32],
+  iconAnchor: [40, 32],
+})
+
+const customerIcon = L.divIcon({
+  className: '',
+  html: `<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+    <div style="background:#4CAF7D;color:#0C0C0C;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.5)">Tu dirección</div>
+    <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #4CAF7D"></div>
+  </div>`,
+  iconSize:   [90, 32],
+  iconAnchor: [45, 32],
+})
+
+const riderIcon = L.divIcon({
+  className: '',
+  html: `<div style="font-size:28px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6));transform:translateY(-8px)">🛵</div>`,
+  iconSize:   [32, 32],
+  iconAnchor: [16, 32],
+})
+
+// ─── Actualiza la vista del mapa cuando el rider se mueve ──
+function MapPanner({ center }: { center: [number, number] }) {
+  const map = useMap()
+  useEffect(() => { map.panTo(center, { animate: true, duration: 0.5 }) }, [center, map])
+  return null
+}
+
+// ─── Mapa con animación del repartidor ────────────────────
 function DeliveryMap() {
   const [progress, setProgress] = useState(0.08)
 
@@ -29,86 +73,62 @@ function DeliveryMap() {
     return () => clearInterval(id)
   }, [])
 
-  const riderPos: google.maps.LatLngLiteral = {
-    lat: lerp(RESTAURANT.lat, CUSTOMER.lat, progress),
-    lng: lerp(RESTAURANT.lng, CUSTOMER.lng, progress),
-  }
+  const riderPos: [number, number] = [
+    lerp(RESTAURANT.lat, CUSTOMER.lat, progress),
+    lerp(RESTAURANT.lng, CUSTOMER.lng, progress),
+  ]
 
-  const center: google.maps.LatLngLiteral = {
-    lat: (RESTAURANT.lat + CUSTOMER.lat) / 2,
-    lng: (RESTAURANT.lng + CUSTOMER.lng) / 2,
-  }
+  const center: [number, number] = [
+    (RESTAURANT.lat + CUSTOMER.lat) / 2,
+    (RESTAURANT.lng + CUSTOMER.lng) / 2,
+  ]
 
   return (
-    <Map
-      defaultCenter={center}
-      defaultZoom={14}
-      mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-      colorScheme="DARK"
-      disableDefaultUI
-      gestureHandling="cooperative"
-      style={{ width: '100%', height: '100%' }}
+    <MapContainer
+      center={center}
+      zoom={14}
+      scrollWheelZoom={false}
+      zoomControl={false}
+      style={{ width: '100%', height: '100%', background: '#161616' }}
     >
-      {/* Restaurante */}
-      <AdvancedMarker position={RESTAURANT} title="Vaquero's">
-        <div className="flex flex-col items-center gap-1">
-          <div className="bg-brand text-inverse text-xs font-semibold px-2 py-0.5 rounded-full shadow">
-            Vaquero's
-          </div>
-          <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-brand" />
-        </div>
-      </AdvancedMarker>
-
-      {/* Cliente */}
-      <AdvancedMarker position={CUSTOMER} title="Tu dirección">
-        <div className="flex flex-col items-center gap-1">
-          <div className="bg-success text-inverse text-xs font-semibold px-2 py-0.5 rounded-full shadow">
-            Tu dirección
-          </div>
-          <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-success" />
-        </div>
-      </AdvancedMarker>
-
-      {/* Repartidor */}
-      <AdvancedMarker position={riderPos} title="Repartidor">
-        <div className="text-2xl drop-shadow-lg" style={{ transform: 'translateY(-8px)' }}>
-          🛵
-        </div>
-      </AdvancedMarker>
-    </Map>
-  )
-}
-
-// ─── Fallback cuando no hay API key ──────────────────────
-function MapPlaceholder() {
-  return (
-    <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-elevated">
-      <span className="text-3xl">🗺️</span>
-      <p className="text-muted text-xs text-center px-4">
-        Mapa de seguimiento en vivo
-      </p>
-      <p className="text-brand text-xs">
-        Configura NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-      </p>
-    </div>
+      <TileLayer
+        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
+      />
+      <MapPanner center={riderPos} />
+      <Marker position={[RESTAURANT.lat, RESTAURANT.lng]} icon={restaurantIcon}>
+        <Popup>Vaquero&apos;s</Popup>
+      </Marker>
+      <Marker position={[CUSTOMER.lat, CUSTOMER.lng]} icon={customerIcon}>
+        <Popup>Tu dirección</Popup>
+      </Marker>
+      <Marker position={riderPos} icon={riderIcon}>
+        <Popup>Repartidor en camino</Popup>
+      </Marker>
+    </MapContainer>
   )
 }
 
 // ─── Componente público ───────────────────────────────────
 export function OrderMap() {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+  const [mounted, setMounted] = useState(false)
 
-  const hasKey = apiKey && apiKey !== 'REEMPLAZA_CON_TU_API_KEY'
+  useEffect(() => {
+    fixLeafletIcons()
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return (
+      <div className="bg-surface border border-border rounded-xl overflow-hidden h-56 flex items-center justify-center">
+        <span className="text-muted text-xs">Cargando mapa...</span>
+      </div>
+    )
+  }
 
   return (
     <div className="bg-surface border border-border rounded-xl overflow-hidden h-56">
-      {hasKey ? (
-        <APIProvider apiKey={apiKey}>
-          <DeliveryMap />
-        </APIProvider>
-      ) : (
-        <MapPlaceholder />
-      )}
+      <DeliveryMap />
     </div>
   )
 }
