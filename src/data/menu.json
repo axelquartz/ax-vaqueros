@@ -1,188 +1,306 @@
 {
   "categories": [
-    { "id": "tacos",        "label": "Tacos",        "emoji": "🌮" },
-    { "id": "burritos",     "label": "Burritos",     "emoji": "🌯" },
-    { "id": "quesadillas",  "label": "Quesadillas",  "emoji": "🧀" },
-    { "id": "bebidas",      "label": "Bebidas",      "emoji": "🥤" },
-    { "id": "extras",       "label": "Extras",       "emoji": "🫙" }
+    { "id": "alitas",      "label": "Alitas",      "emoji": "🍗" },
+    { "id": "boneless",    "label": "Boneless",    "emoji": "🍗" },
+    { "id": "combinados",  "label": "Combinados",  "emoji": "🌭" },
+    { "id": "banderillas", "label": "Banderillas", "emoji": "🌭" },
+    { "id": "tostilocos",  "label": "Tostilocos",  "emoji": "🌶️" },
+    { "id": "extras",      "label": "Extras",      "emoji": "🍟" },
+    { "id": "bebidas",     "label": "Bebidas",     "emoji": "🥤" }
   ],
 
   "variants": {
-    "protein": {
-      "label": "Proteína",
+    "sabor": {
+      "label": "Sabor",
       "required": true,
+      "multi": false,
       "options": [
-        { "id": "pastor",   "label": "Al Pastor",    "price": 0 },
-        { "id": "asada",    "label": "Carne Asada",  "price": 5 },
-        { "id": "pollo",    "label": "Pollo",        "price": 0 },
-        { "id": "chorizo",  "label": "Chorizo",      "price": 0 },
-        { "id": "veggie",   "label": "Veggie",       "price": 0 }
+        { "id": "bbq",          "label": "BBQ",            "price": 0 },
+        { "id": "mango_hab",    "label": "Mango Habanero", "price": 0 },
+        { "id": "bufalo",       "label": "Búfalo",         "price": 0 },
+        { "id": "lemon_pepper", "label": "Lemon Pepper",   "price": 0 },
+        { "id": "hot_bull",     "label": "Hot Bull",       "price": 0 },
+        { "id": "ajo_parm",     "label": "Ajo Parmesano",  "price": 0 },
+        { "id": "pina_hot",     "label": "Piña Hot",       "price": 0 },
+        { "id": "tamarindo",    "label": "Tamarindo",      "price": 0 },
+        { "id": "cajun",        "label": "Cajún",          "price": 0 },
+        { "id": "extremo",      "label": "Extremo 🔥",     "price": 0 }
       ]
     },
-    "size": {
-      "label": "Tamaño",
+    "dip": {
+      "label": "Dip",
       "required": true,
+      "multi": false,
       "options": [
-        { "id": "chico",    "label": "Chico",        "price": 0 },
-        { "id": "grande",   "label": "Grande",       "price": 20 }
+        { "id": "ranch",    "label": "Ranch",    "price": 0 },
+        { "id": "chipotle", "label": "Chipotle", "price": 0 }
       ]
     },
-    "tortilla": {
-      "label": "Tortilla",
+    "totopos": {
+      "label": "Totopos",
       "required": true,
+      "multi": false,
       "options": [
-        { "id": "maiz",     "label": "Maíz",         "price": 0 },
-        { "id": "harina",   "label": "Harina",       "price": 0 }
+        { "id": "con_totopos", "label": "Con totopos", "price": 0 },
+        { "id": "sin_totopos", "label": "Sin totopos", "price": 0 }
       ]
     },
-    "salsa": {
-      "label": "Salsa",
+    "salsas": {
+      "label": "Salsas",
       "required": false,
+      "multi": true,
       "options": [
-        { "id": "verde",    "label": "Verde",        "price": 0 },
-        { "id": "roja",     "label": "Roja",         "price": 0 },
-        { "id": "habanero", "label": "Habanero 🔥",  "price": 0 },
-        { "id": "sin",      "label": "Sin salsa",    "price": 0 }
+        { "id": "catsup",      "label": "Catsup",       "price": 0 },
+        { "id": "crema",       "label": "Crema",        "price": 0 },
+        { "id": "mostaza",     "label": "Mostaza",      "price": 0 },
+        { "id": "mayonesa",    "label": "Mayonesa",     "price": 0 },
+        { "id": "ranch",       "label": "Ranch",        "price": 0 },
+        { "id": "chipotle",    "label": "Chipotle",     "price": 0 },
+        { "id": "costa_brava", "label": "Costa Brava",  "price": 0 },
+        { "id": "porky",       "label": "Porky",        "price": 0 }
+      ]
+    },
+    "ingredientes": {
+      "label": "Ingredientes",
+      "required": false,
+      "multi": true,
+      "options": [
+        { "id": "con_todo",  "label": "Con todo ✨",           "price": 0 },
+        { "id": "jicama",    "label": "Jícama",               "price": 0 },
+        { "id": "pepino",    "label": "Pepino",               "price": 0 },
+        { "id": "rielitos",  "label": "Rielitos",             "price": 0 },
+        { "id": "cueritos",  "label": "Cueritos",             "price": 0 },
+        { "id": "maggy",     "label": "Salsa Maggy",          "price": 0 },
+        { "id": "inglesa",   "label": "Salsa Inglesa",        "price": 0 },
+        { "id": "salchicha", "label": "Salchicha Picada",     "price": 0 },
+        { "id": "cacahuate", "label": "Cacahuates Japoneses", "price": 0 },
+        { "id": "chamoy",    "label": "Chamoy",               "price": 0 },
+        { "id": "chile",     "label": "Chile",                "price": 0 },
+        { "id": "tajin",     "label": "Tajín",                "price": 0 }
       ]
     },
     "drink_size": {
       "label": "Tamaño",
       "required": true,
+      "multi": false,
       "options": [
-        { "id": "chico",    "label": "Chico (355ml)", "price": 0 },
-        { "id": "grande",   "label": "Grande (600ml)","price": 10 }
+        { "id": "chico",  "label": "Chico (355 ml)",  "price": 0 },
+        { "id": "grande", "label": "Grande (600 ml)", "price": 10 }
       ]
     }
   },
 
   "products": [
     {
-      "id": "taco-vaquero",
-      "categoryId": "tacos",
-      "name": "Taco Vaquero's",
-      "description": "Nuestro taco insignia. Doble tortilla de maíz, cebolla morada, cilantro fresco y salsa de la casa.",
-      "price": 35,
+      "id": "alitas-5",
+      "categoryId": "alitas",
+      "name": "Alitas 5 pzas",
+      "description": "5 alitas de pollo bañadas en tu sabor favorito. Incluye dip y totopos al gusto.",
+      "price": 190,
       "available": true,
-      "featured": true,
-      "variantGroups": ["protein", "tortilla", "salsa"],
+      "featured": false,
+      "variantGroups": ["sabor", "dip", "totopos"],
       "image": null
     },
     {
-      "id": "taco-costilla",
-      "categoryId": "tacos",
-      "name": "Taco de Costilla",
-      "description": "Costilla de res deshebrada, lenta cocción 8 hrs, con cebolla caramelizada.",
+      "id": "alitas-8",
+      "categoryId": "alitas",
+      "name": "Alitas 8 pzas",
+      "description": "8 alitas de pollo bañadas en tu sabor favorito. Incluye dip y totopos al gusto.",
+      "price": 240,
+      "available": true,
+      "featured": true,
+      "variantGroups": ["sabor", "dip", "totopos"],
+      "image": null
+    },
+    {
+      "id": "alitas-10",
+      "categoryId": "alitas",
+      "name": "Alitas 10 pzas",
+      "description": "10 alitas de pollo bañadas en tu sabor favorito. Incluye dip y totopos al gusto.",
+      "price": 280,
+      "available": true,
+      "featured": false,
+      "variantGroups": ["sabor", "dip", "totopos"],
+      "image": null
+    },
+
+    {
+      "id": "boneless-10",
+      "categoryId": "boneless",
+      "name": "Boneless 10 pzas",
+      "description": "10 piezas de boneless bañadas en tu sabor favorito. Incluye dip y totopos al gusto.",
+      "price": 190,
+      "available": true,
+      "featured": true,
+      "variantGroups": ["sabor", "dip", "totopos"],
+      "image": null
+    },
+    {
+      "id": "boneless-16",
+      "categoryId": "boneless",
+      "name": "Boneless 16 pzas",
+      "description": "16 piezas de boneless bañadas en tu sabor favorito. Incluye dip y totopos al gusto.",
+      "price": 240,
+      "available": true,
+      "featured": false,
+      "variantGroups": ["sabor", "dip", "totopos"],
+      "image": null
+    },
+
+    {
+      "id": "combinado-chico",
+      "categoryId": "combinados",
+      "name": "Combinado Chico",
+      "description": "Combinado chico Vaquero's. Elige tus salsas favoritas.",
+      "price": 70,
+      "available": true,
+      "featured": false,
+      "variantGroups": ["salsas"],
+      "image": null
+    },
+    {
+      "id": "combinado-mediano",
+      "categoryId": "combinados",
+      "name": "Combinado Mediano",
+      "description": "Combinado mediano Vaquero's. Elige tus salsas favoritas.",
+      "price": 82,
+      "available": true,
+      "featured": false,
+      "variantGroups": ["salsas"],
+      "image": null
+    },
+    {
+      "id": "combinado-grande",
+      "categoryId": "combinados",
+      "name": "Combinado Grande",
+      "description": "Combinado grande Vaquero's. Elige tus salsas favoritas.",
+      "price": 108,
+      "available": true,
+      "featured": true,
+      "variantGroups": ["salsas"],
+      "image": null
+    },
+
+    {
+      "id": "banderilla-normal-queso",
+      "categoryId": "banderillas",
+      "name": "Banderilla Normal con Queso",
+      "description": "Banderilla estilo Vaquero's con queso. Personaliza tus salsas.",
+      "price": 70,
+      "available": true,
+      "featured": false,
+      "variantGroups": ["salsas"],
+      "image": null
+    },
+    {
+      "id": "banderilla-normal-sin",
+      "categoryId": "banderillas",
+      "name": "Banderilla Normal sin Queso",
+      "description": "Banderilla estilo Vaquero's sin queso. Personaliza tus salsas.",
       "price": 45,
       "available": true,
-      "featured": true,
-      "variantGroups": ["tortilla", "salsa"],
-      "image": null
-    },
-    {
-      "id": "taco-camaron",
-      "categoryId": "tacos",
-      "name": "Taco de Camarón",
-      "description": "Camarón a la plancha, repollo morado, mayo chipotle y limón.",
-      "price": 50,
-      "available": true,
       "featured": false,
-      "variantGroups": ["tortilla", "salsa"],
+      "variantGroups": ["salsas"],
       "image": null
     },
     {
-      "id": "burrito-clasico",
-      "categoryId": "burritos",
-      "name": "Burrito Clásico",
-      "description": "Tortilla de harina grande, arroz, frijoles, pico de gallo y crema.",
-      "price": 95,
+      "id": "banderilla-crunch-queso",
+      "categoryId": "banderillas",
+      "name": "Banderilla Crunch con Queso",
+      "description": "Banderilla crujiente estilo Vaquero's con queso. Personaliza tus salsas.",
+      "price": 85,
       "available": true,
       "featured": true,
-      "variantGroups": ["protein", "salsa"],
+      "variantGroups": ["salsas"],
       "image": null
     },
     {
-      "id": "burrito-monstruo",
-      "categoryId": "burritos",
-      "name": "Burrito Monstruo",
-      "description": "El doble. Mismo relleno del Clásico pero con guacamole y queso extra.",
-      "price": 130,
+      "id": "banderilla-crunch-sin",
+      "categoryId": "banderillas",
+      "name": "Banderilla Crunch sin Queso",
+      "description": "Banderilla crujiente estilo Vaquero's sin queso. Personaliza tus salsas.",
+      "price": 60,
       "available": true,
       "featured": false,
-      "variantGroups": ["protein", "salsa"],
+      "variantGroups": ["salsas"],
       "image": null
     },
+
     {
-      "id": "quesadilla-sencilla",
-      "categoryId": "quesadillas",
-      "name": "Quesadilla Sencilla",
-      "description": "Tortilla de harina, queso Oaxaca fundido.",
-      "price": 55,
-      "available": true,
-      "featured": false,
-      "variantGroups": ["protein"],
-      "image": null
-    },
-    {
-      "id": "quesadilla-especial",
-      "categoryId": "quesadillas",
-      "name": "Quesadilla Especial",
-      "description": "Doble queso, rajas poblanas, hongos y epazote.",
-      "price": 75,
+      "id": "tostilocos",
+      "categoryId": "tostilocos",
+      "name": "Tostilocos",
+      "description": "Tostitos preparados al estilo Vaquero's. Elige tus ingredientes favoritos o pide todo.",
+      "price": 80,
       "available": true,
       "featured": true,
-      "variantGroups": ["protein", "salsa"],
+      "variantGroups": ["ingredientes"],
       "image": null
     },
+
     {
-      "id": "agua-fresca",
-      "categoryId": "bebidas",
-      "name": "Agua Fresca",
-      "description": "Jamaica, horchata o tamarindo. Natural, sin conservadores.",
-      "price": 25,
-      "available": true,
-      "featured": false,
-      "variantGroups": ["drink_size"],
-      "variants": {
-        "flavor": {
-          "label": "Sabor",
-          "required": true,
-          "options": [
-            { "id": "jamaica",   "label": "Jamaica",   "price": 0 },
-            { "id": "horchata",  "label": "Horchata",  "price": 0 },
-            { "id": "tamarindo", "label": "Tamarindo", "price": 0 }
-          ]
-        }
-      },
-      "image": null
-    },
-    {
-      "id": "refresco",
-      "categoryId": "bebidas",
-      "name": "Refresco",
-      "description": "Coca-Cola, Sprite o Fanta. Lata 355ml.",
-      "price": 25,
-      "available": true,
-      "featured": false,
-      "variantGroups": ["drink_size"],
-      "image": null
-    },
-    {
-      "id": "guacamole",
+      "id": "dedos-queso-5",
       "categoryId": "extras",
-      "name": "Guacamole",
-      "description": "Aguacate Hass, jitomate, cebolla, cilantro y limón. Porción individual.",
-      "price": 30,
+      "name": "Dedos de Queso 5 pzas",
+      "description": "5 dedos de queso crujientes.",
+      "price": 170,
       "available": true,
       "featured": false,
       "variantGroups": [],
       "image": null
     },
     {
-      "id": "elote-esquite",
+      "id": "papas-francesa",
       "categoryId": "extras",
-      "name": "Esquite",
-      "description": "Elote desgranado, mayonesa, queso cotija, chile en polvo y limón.",
+      "name": "Papas a la Francesa",
+      "description": "Porción de papas a la francesa.",
       "price": 35,
+      "available": true,
+      "featured": false,
+      "variantGroups": [],
+      "image": null
+    },
+    {
+      "id": "papas-gajo",
+      "categoryId": "extras",
+      "name": "Papas Gajo",
+      "description": "Porción de papas gajo.",
+      "price": 35,
+      "available": true,
+      "featured": false,
+      "variantGroups": [],
+      "image": null
+    },
+    {
+      "id": "salchipulpos",
+      "categoryId": "extras",
+      "name": "Salchipulpos",
+      "description": "Porción de salchipulpos.",
+      "price": 35,
+      "available": true,
+      "featured": false,
+      "variantGroups": [],
+      "image": null
+    },
+
+    {
+      "id": "refresco",
+      "categoryId": "bebidas",
+      "name": "Refresco",
+      "description": "Coca-Cola, Sprite o Fanta.",
+      "price": 25,
+      "available": true,
+      "featured": false,
+      "variantGroups": ["drink_size"],
+      "image": null
+    },
+    {
+      "id": "agua",
+      "categoryId": "bebidas",
+      "name": "Agua Natural",
+      "description": "Agua embotellada.",
+      "price": 15,
       "available": true,
       "featured": false,
       "variantGroups": [],

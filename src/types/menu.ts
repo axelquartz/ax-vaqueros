@@ -7,6 +7,7 @@ export interface VariantOption {
 export interface VariantGroup {
   label: string
   required: boolean
+  multi?: boolean
   options: VariantOption[]
 }
 

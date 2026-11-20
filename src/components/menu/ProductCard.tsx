@@ -25,36 +25,79 @@ export function ProductCard({ product }: ProductCardProps) {
     ...(menuData.variants as Record<string, VariantGroup>)[id],
   }))
 
+  // ─── Helpers for multi-select groups ─────────────────────
+  const getSelectedIds = (groupId: string): string[] => {
+    const val = selectedVariants[groupId]
+    return val ? val.split(',').filter(Boolean) : []
+  }
+
+  const isOptionSelected = (groupId: string, optionId: string, isMulti?: boolean): boolean => {
+    if (!isMulti) return selectedVariants[groupId] === optionId
+    return getSelectedIds(groupId).includes(optionId)
+  }
+
+  const handleVariantSelect = (groupId: string, optionId: string, isMulti?: boolean) => {
+    if (!isMulti) {
+      setSelectedVariants(prev => ({ ...prev, [groupId]: optionId }))
+      return
+    }
+    setSelectedVariants(prev => {
+      const current = getSelectedIds(groupId)
+      const next = current.includes(optionId)
+        ? current.filter(x => x !== optionId)
+        : [...current, optionId]
+      return { ...prev, [groupId]: next.join(',') }
+    })
+  }
+
+  // ─── Validation ───────────────────────────────────────────
   const allRequiredSelected = variantGroups
     .filter(g => g.required)
-    .every(g => selectedVariants[g.id])
+    .every(g => !!selectedVariants[g.id])
 
+  // ─── Price calculation ────────────────────────────────────
   const variantExtra = variantGroups.reduce((sum, group) => {
-    const option = group.options.find((o: VariantOption) => o.id === selectedVariants[group.id])
-    return sum + (option?.price ?? 0)
+    if (!selectedVariants[group.id]) return sum
+    if (group.multi) {
+      return sum + getSelectedIds(group.id).reduce((s, id) => {
+        const opt = group.options.find((o: VariantOption) => o.id === id)
+        return s + (opt?.price ?? 0)
+      }, 0)
+    }
+    const opt = group.options.find((o: VariantOption) => o.id === selectedVariants[group.id])
+    return sum + (opt?.price ?? 0)
   }, 0)
 
-  const unitPrice = product.price + variantExtra
+  const unitPrice  = product.price + variantExtra
   const totalPrice = unitPrice * quantity
 
+  // ─── Add to cart ──────────────────────────────────────────
   const handleAddToCart = () => {
     if (variantGroups.some(g => g.required) && !allRequiredSelected) return
 
     const variantLabels: Record<string, string> = {}
     variantGroups.forEach(group => {
-      const option = group.options.find((o: VariantOption) => o.id === selectedVariants[group.id])
-      if (option) variantLabels[group.id] = option.label
+      if (!selectedVariants[group.id]) return
+      if (group.multi) {
+        const labels = getSelectedIds(group.id)
+          .map(id => group.options.find((o: VariantOption) => o.id === id)?.label)
+          .filter(Boolean) as string[]
+        if (labels.length > 0) variantLabels[group.id] = labels.join(', ')
+      } else {
+        const opt = group.options.find((o: VariantOption) => o.id === selectedVariants[group.id])
+        if (opt) variantLabels[group.id] = opt.label
+      }
     })
 
     addItem({
-      productId: product.id,
-      name: product.name,
+      productId:      product.id,
+      name:           product.name,
       quantity,
-      unitPrice: product.price,
+      unitPrice:      product.price,
       selectedVariants,
       variantLabels,
       variantExtra,
-      subtotal: totalPrice,
+      subtotal:       totalPrice,
     })
 
     setQuantity(1)
@@ -97,15 +140,16 @@ export function ProductCard({ product }: ProductCardProps) {
               <p className="text-xs text-secondary font-medium mb-2">
                 {group.label}
                 {group.required && <span className="text-error ml-1">*</span>}
+                {group.multi && <span className="text-muted ml-1 font-normal">(varios)</span>}
               </p>
               <div className="flex flex-wrap gap-2">
                 {group.options.map((option: VariantOption) => (
                   <button
                     key={option.id}
-                    onClick={() => setSelectedVariants(prev => ({ ...prev, [group.id]: option.id }))}
+                    onClick={() => handleVariantSelect(group.id, option.id, group.multi)}
                     className={[
                       'px-3 py-1.5 rounded-full text-xs border transition-colors',
-                      selectedVariants[group.id] === option.id
+                      isOptionSelected(group.id, option.id, group.multi)
                         ? 'bg-brand text-inverse border-brand font-medium'
                         : 'bg-elevated border-border text-secondary hover:border-border-strong hover:text-foreground',
                     ].join(' ')}

@@ -7,7 +7,7 @@ import { useCart } from '@/context/CartContext'
 import menuData from '@/data/menu.json'
 
 export default function MenuPage() {
-  const [activeCategory, setActiveCategory] = useState('tacos')
+  const [activeCategory, setActiveCategory] = useState('alitas')
   const { itemCount } = useCart()
 
   const products = menuData.products.filter(
