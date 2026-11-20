@@ -41,6 +41,9 @@ export default function MenuPage() {
                 {storeOpen ? '● Abierto' : '● Cerrado'}
               </span>
             )}
+            <a href="/nosotros" className="text-muted hover:text-foreground transition-colors text-xs">
+              Nosotros
+            </a>
             <a href="/pedidos" className="text-muted hover:text-foreground transition-colors text-xs">
               Mis pedidos
             </a>
