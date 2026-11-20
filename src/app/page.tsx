@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { ProductCard } from '@/components/menu/ProductCard'
 import { CartDrawer } from '@/components/cart/CartDrawer'
 import { AnnouncementBanner } from '@/components/layout/AnnouncementBanner'
+import { TopBanner } from '@/components/layout/TopBanner'
 import { useCart } from '@/context/CartContext'
 import { isStoreOpen, getStoreStatusText, getAllSchedule } from '@/lib/storeHours'
 import menuData from '@/data/menu.json'
@@ -26,6 +27,8 @@ export default function MenuPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
+
+      <TopBanner />
 
       {/* Header */}
       <header className="sticky top-0 z-30 bg-background/90 backdrop-blur-md border-b border-border">
