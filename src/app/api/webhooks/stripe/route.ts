@@ -69,12 +69,21 @@ async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
     subtotal:    number
   }> = JSON.parse(itemsJson)
 
-  // Crear Invoice Items para cada producto del pedido
+  // Crear la factura primero (API v2026+ requiere asociar items al invoice explícitamente)
+  const invoice = await stripe.invoices.create({
+    customer:     customerId,
+    auto_advance: false,
+    metadata: { folio, deliveryMethod },
+    custom_fields: [{ name: 'Folio', value: folio }],
+  })
+
+  // Crear Invoice Items asociados al invoice recién creado
   await Promise.all(
     items.map(item =>
       stripe.invoiceItems.create({
         customer:    customerId,
-        amount:      Math.round(item.subtotal * 100), // total por línea
+        invoice:     invoice.id,
+        amount:      Math.round(item.subtotal * 100),
         currency:    'mxn',
         description: `${item.quantity}x ${item.description}`,
       })
@@ -86,19 +95,12 @@ async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
   if (fee > 0) {
     await stripe.invoiceItems.create({
       customer:    customerId,
+      invoice:     invoice.id,
       amount:      Math.round(fee * 100),
       currency:    'mxn',
       description: `Envío — ${deliveryMethod}`,
     })
   }
-
-  // Crear la factura
-  const invoice = await stripe.invoices.create({
-    customer:     customerId,
-    auto_advance: false, // No intentar cobrar de nuevo
-    metadata: { folio, deliveryMethod },
-    custom_fields: [{ name: 'Folio', value: folio }],
-  })
 
   // Finalizar la factura
   await stripe.invoices.finalizeInvoice(invoice.id)
