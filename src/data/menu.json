@@ -215,7 +215,7 @@
       "available": true,
       "featured": false,
       "variantGroups": ["salsas"],
-      "image": "/images/products/combinado.jpeg"
+      "image": "/images/products/combinado-mediano.jpeg"
     },
     {
       "id": "combinado-grande",
@@ -226,7 +226,7 @@
       "available": true,
       "featured": true,
       "variantGroups": ["salsas"],
-      "image": "/images/products/combinado-grande.jpeg"
+      "image": "/images/products/combinado.jpeg"
     },
 
     {
@@ -238,7 +238,7 @@
       "available": true,
       "featured": false,
       "variantGroups": ["salsas"],
-      "image": "/images/products/combinado.jpeg"
+      "image": "/images/products/banderilla-normal.jpg"
     },
     {
       "id": "banderilla-normal-sin",
@@ -249,7 +249,7 @@
       "available": true,
       "featured": false,
       "variantGroups": ["salsas"],
-      "image": "/images/products/combinado.jpeg"
+      "image": "/images/products/banderilla-normal.jpg"
     },
     {
       "id": "banderilla-crunch-queso",
