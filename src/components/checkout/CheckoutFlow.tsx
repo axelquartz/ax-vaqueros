@@ -13,6 +13,8 @@ import { Input, Textarea } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { useCart } from '@/context/CartContext'
 import ordersData from '@/data/orders.json'
+import { AddressAutocomplete } from '@/components/checkout/AddressAutocomplete'
+import { CheckoutMap } from '@/components/checkout/CheckoutMap'
 
 // ─── Stripe setup ─────────────────────────────────────────
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
@@ -166,14 +168,17 @@ function StepDelivery({ selected, onSelect, onNext, onBack }: {
 }
 
 // ─── Step 3: Datos del cliente ────────────────────────────
-function StepCustomer({ form, errors, deliveryMethod, onChange, onNext, onBack, loading }: {
-  form: FormState
-  errors: Partial<FormState>
-  deliveryMethod: DeliveryMethodId
-  onChange: (key: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
-  onNext: () => void
-  onBack: () => void
-  loading: boolean
+function StepCustomer({ form, errors, deliveryMethod, onChange, onAddressChange, onAddressSelect, coords, onNext, onBack, loading }: {
+  form:            FormState
+  errors:          Partial<FormState>
+  deliveryMethod:  DeliveryMethodId
+  onChange:        (key: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
+  onAddressChange: (value: string) => void
+  onAddressSelect: (address: string, lat: number, lng: number) => void
+  coords:          { lat: number; lng: number } | null
+  onNext:          () => void
+  onBack:          () => void
+  loading:         boolean
 }) {
   return (
     <div className="space-y-4">
@@ -191,8 +196,15 @@ function StepCustomer({ form, errors, deliveryMethod, onChange, onNext, onBack, 
             value={form.tableNumber} onChange={onChange('tableNumber')} error={errors.tableNumber} />
         )}
         {deliveryMethod === 'delivery' && (
-          <Input label="Dirección de entrega" placeholder="Calle, número, colonia"
-            value={form.address} onChange={onChange('address')} error={errors.address} />
+          <>
+            <AddressAutocomplete
+              value={form.address}
+              onChange={onAddressChange}
+              onSelect={onAddressSelect}
+              error={errors.address}
+            />
+            {coords && <CheckoutMap lat={coords.lat} lng={coords.lng} />}
+          </>
         )}
         <Textarea label="Notas (opcional)" placeholder="Alergias, preferencias..."
           value={form.notes} onChange={onChange('notes')} />
@@ -376,6 +388,7 @@ export function CheckoutFlow() {
   const [deliveryMethod, setDelivery] = useState<DeliveryMethodId>('pickup')
   const [form, setForm]               = useState<FormState>({ name: '', phone: '', address: '', tableNumber: '', notes: '' })
   const [errors, setErrors]           = useState<Partial<FormState>>({})
+  const [coords, setCoords]           = useState<{ lat: number; lng: number } | null>(null)
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [isDemoMode, setIsDemoMode]   = useState(false)
   const [folio, setFolio]             = useState<string>('')
@@ -389,6 +402,26 @@ export function CheckoutFlow() {
       setForm(f => ({ ...f, [key]: e.target.value }))
       if (errors[key]) setErrors(err => ({ ...err, [key]: undefined }))
     }
+
+  // Cuando el usuario escribe manualmente en el campo dirección
+  const handleAddressChange = (value: string) => {
+    setForm(f => ({ ...f, address: value }))
+    setCoords(null) // limpiar coords hasta que seleccione una sugerencia
+    if (errors.address) setErrors(err => ({ ...err, address: undefined }))
+  }
+
+  // Cuando el usuario selecciona una sugerencia del autocomplete
+  const handleAddressSelect = (address: string, lat: number, lng: number) => {
+    setForm(f => ({ ...f, address }))
+    setCoords({ lat, lng })
+    if (errors.address) setErrors(err => ({ ...err, address: undefined }))
+  }
+
+  // Limpiar coords si cambia el método de entrega
+  const handleDeliveryChange = (id: DeliveryMethodId) => {
+    setDelivery(id)
+    if (id !== 'delivery') setCoords(null)
+  }
 
   const validateCustomer = (): Partial<FormState> => {
     const e: Partial<FormState> = {}
@@ -465,7 +498,7 @@ export function CheckoutFlow() {
       {step === 'delivery' && (
         <StepDelivery
           selected={deliveryMethod}
-          onSelect={setDelivery}
+          onSelect={handleDeliveryChange}
           onNext={() => setStep('customer')}
           onBack={() => setStep('review')}
         />
@@ -476,6 +509,9 @@ export function CheckoutFlow() {
           errors={errors}
           deliveryMethod={deliveryMethod}
           onChange={patchField}
+          onAddressChange={handleAddressChange}
+          onAddressSelect={handleAddressSelect}
+          coords={coords}
           onNext={goToPayment}
           onBack={() => setStep('delivery')}
           loading={creatingIntent}
