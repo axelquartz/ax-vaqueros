@@ -113,7 +113,7 @@
       "available": true,
       "featured": true,
       "variantGroups": ["sabor", "dip", "totopos"],
-      "image": "/images/products/alitas-small.jpeg"
+      "image": "/images/products/alitas-box.jpeg"
     },
     {
       "id": "alitas-10",
@@ -147,7 +147,7 @@
       "available": true,
       "featured": false,
       "variantGroups": ["sabor", "dip", "totopos"],
-      "image": "/images/products/boneless-combo.jpeg"
+      "image": "/images/products/boneless-sauced.jpeg"
     },
     {
       "id": "boneless-20",
@@ -170,7 +170,7 @@
       "available": true,
       "featured": false,
       "variantGroups": [],
-      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Dedos+5"
+      "image": "/images/products/dedos-queso-5.jpeg"
     },
     {
       "id": "dedos-queso-8",
@@ -181,7 +181,7 @@
       "available": true,
       "featured": false,
       "variantGroups": [],
-      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Dedos+8"
+      "image": "/images/products/dedos-queso-8.jpeg"
     },
     {
       "id": "dedos-queso-10",
@@ -192,7 +192,7 @@
       "available": true,
       "featured": false,
       "variantGroups": [],
-      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Dedos+10"
+      "image": "/images/products/dedos-queso-10.jpeg"
     },
 
     {
@@ -226,7 +226,7 @@
       "available": true,
       "featured": true,
       "variantGroups": ["salsas"],
-      "image": "/images/products/combinado.jpeg"
+      "image": "/images/products/combinado-grande.jpeg"
     },
 
     {
