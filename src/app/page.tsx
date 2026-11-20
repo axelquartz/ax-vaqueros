@@ -1,14 +1,23 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ProductCard } from '@/components/menu/ProductCard'
 import { CartDrawer } from '@/components/cart/CartDrawer'
+import { AnnouncementBanner } from '@/components/layout/AnnouncementBanner'
 import { useCart } from '@/context/CartContext'
+import { isStoreOpen, getStoreStatusText } from '@/lib/storeHours'
 import menuData from '@/data/menu.json'
 
 export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState('todos')
   const { itemCount } = useCart()
+  const [storeOpen, setStoreOpen]       = useState(true)
+  const [storeStatus, setStoreStatus]   = useState('')
+
+  useEffect(() => {
+    setStoreOpen(isStoreOpen())
+    setStoreStatus(getStoreStatusText())
+  }, [])
 
   const products = menuData.products.filter(
     p => (activeCategory === 'todos' || p.categoryId === activeCategory) && p.available
@@ -24,11 +33,20 @@ export default function MenuPage() {
             <h1 className="text-foreground font-semibold text-sm tracking-wide">Vaquero's</h1>
             <p className="text-muted text-xs">Menú Digital</p>
           </div>
-          <a href="/pedidos" className="text-muted hover:text-foreground transition-colors text-xs">
-            Mis pedidos
-          </a>
+          <div className="flex items-center gap-3">
+            {storeStatus && (
+              <span className={`text-xs font-medium ${storeOpen ? 'text-green-400' : 'text-muted'}`}>
+                {storeOpen ? '● Abierto' : '● Cerrado'}
+              </span>
+            )}
+            <a href="/pedidos" className="text-muted hover:text-foreground transition-colors text-xs">
+              Mis pedidos
+            </a>
+          </div>
         </div>
       </header>
+
+      <AnnouncementBanner />
 
       {/* Categorías */}
       <div className="sticky top-14 z-20 bg-background/90 backdrop-blur-md border-b border-border-subtle">

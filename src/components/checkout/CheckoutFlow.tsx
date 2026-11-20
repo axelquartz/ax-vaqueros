@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { loadStripe } from '@stripe/stripe-js'
 import {
@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/Button'
 import { useCart } from '@/context/CartContext'
 import ordersData from '@/data/orders.json'
 import { saveOrder } from '@/lib/orderHistory'
+import { isStoreOpen, getStoreStatusText } from '@/lib/storeHours'
 import dynamic from 'next/dynamic'
 import { AddressAutocomplete } from '@/components/checkout/AddressAutocomplete'
 const CheckoutMap = dynamic(
@@ -101,12 +102,29 @@ function StepIndicator({ current }: { current: StepId }) {
 // ─── Step 1: Resumen ──────────────────────────────────────
 function StepReview({ onNext }: { onNext: () => void }) {
   const { items, total, updateQuantity } = useCart()
+  const [open, setOpen]         = useState(true)
+  const [statusText, setStatus] = useState('')
+
+  useEffect(() => {
+    setOpen(isStoreOpen())
+    setStatus(getStoreStatusText())
+  }, [])
+
   return (
     <div className="space-y-4">
       <div>
         <h2 className="text-foreground font-semibold text-base">Tu orden</h2>
         <p className="text-muted text-xs mt-0.5">Revisa los productos antes de continuar</p>
       </div>
+
+      {!open && statusText && (
+        <div className="bg-surface border border-border rounded-xl px-4 py-3 space-y-1">
+          <p className="text-foreground text-sm font-medium">Restaurante cerrado</p>
+          <p className="text-muted text-xs">{statusText}</p>
+          <p className="text-muted text-xs">Puedes revisar tu orden, pero no podrás continuar hasta que abramos.</p>
+        </div>
+      )}
+
       <div className="bg-surface border border-border rounded-xl overflow-hidden">
         {items.map(item => (
           <div key={item.id} className="flex items-start gap-3 px-4 py-3 border-b border-border last:border-0">
@@ -131,7 +149,7 @@ function StepReview({ onNext }: { onNext: () => void }) {
           <span className="text-foreground text-sm font-semibold">${total}</span>
         </div>
       </div>
-      <Button fullWidth size="lg" onClick={onNext} disabled={items.length === 0}>Continuar</Button>
+      <Button fullWidth size="lg" onClick={onNext} disabled={items.length === 0 || !open}>Continuar</Button>
     </div>
   )
 }

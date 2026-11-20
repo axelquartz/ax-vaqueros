@@ -1,0 +1,12 @@
+{
+  "timezone": "America/Monterrey",
+  "schedule": [
+    { "day": 0, "label": "Domingo",    "open": "13:00", "close": "22:00" },
+    { "day": 1, "label": "Lunes",      "open": null,    "close": null    },
+    { "day": 2, "label": "Martes",     "open": "13:00", "close": "22:00" },
+    { "day": 3, "label": "Miércoles",  "open": "13:00", "close": "22:00" },
+    { "day": 4, "label": "Jueves",     "open": "13:00", "close": "22:00" },
+    { "day": 5, "label": "Viernes",    "open": "13:00", "close": "23:00" },
+    { "day": 6, "label": "Sábado",     "open": "12:00", "close": "23:00" }
+  ]
+}
