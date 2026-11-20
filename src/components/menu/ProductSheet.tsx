@@ -170,11 +170,11 @@ export function ProductSheet({ product: incoming, onClose }: ProductSheetProps) 
               />
             )}
             <div className="flex-1">
-              <h2 className="text-foreground font-bold text-base leading-snug">{product.name}</h2>
+              <h2 className="font-display text-[1.625rem] font-bold leading-none text-foreground">{product.name}</h2>
               {product.description && (
-                <p className="text-muted text-xs leading-relaxed mt-1">{product.description}</p>
+                <p className="text-secondary text-sm leading-relaxed mt-2">{product.description}</p>
               )}
-              <p className="text-brand font-bold text-base mt-2">${product.price}</p>
+              <p className="font-display text-xl font-bold leading-none text-brand tabular mt-2.5">${product.price}</p>
             </div>
           </div>
 
@@ -234,7 +234,8 @@ export function ProductSheet({ product: incoming, onClose }: ProductSheetProps) 
               onClick={handleAddToCart}
               disabled={hasRequired && !allRequiredSelected}
             >
-              Agregar · ${totalPrice}
+              <span>Agregar</span>
+              <span className="tabular opacity-75">${totalPrice}</span>
             </Button>
           </div>
         </div>

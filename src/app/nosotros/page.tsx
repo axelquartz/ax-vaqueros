@@ -41,7 +41,7 @@ export default function NosotrosPage() {
           <Link href="/" aria-label="Vaquero's — Inicio" className="shrink-0">
             <Logo variant="long" className="h-5 sm:h-6" />
           </Link>
-          <a href="/" className="text-muted hover:text-foreground transition-colors text-xs">← Menú</a>
+          <Link href="/" className="text-muted hover:text-foreground transition-colors text-sm flex items-center gap-1.5"><svg aria-hidden viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M10 3.5 5.5 8l4.5 4.5" /></svg>Menú</Link>
         </div>
       </header>
 
@@ -57,14 +57,14 @@ export default function NosotrosPage() {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent" />
           <div className="absolute bottom-0 left-0 p-6">
-            <h1 className="text-foreground font-bold text-3xl tracking-wide">{businessData.name}</h1>
+            <h1 className="font-display text-[2.125rem] font-bold leading-none text-foreground">{businessData.name}</h1>
             <p className="text-brand text-sm font-medium mt-1">{businessData.tagline}</p>
           </div>
         </div>
 
         {/* Descripción */}
         <div className="space-y-3 px-1">
-          <h2 className="text-foreground font-bold text-lg">Nuestra historia</h2>
+          <h2 className="font-display text-[1.625rem] font-bold leading-none text-foreground">Nuestra historia</h2>
           <p className="text-secondary text-sm leading-relaxed">{businessData.description}</p>
           <p className="text-muted text-xs">Fundado en {businessData.founded}</p>
         </div>
@@ -126,7 +126,7 @@ export default function NosotrosPage() {
 
         {/* Mapa */}
         <div className="space-y-3 px-1">
-          <h2 className="text-foreground font-bold text-lg">¿Dónde estamos?</h2>
+          <h2 className="font-display text-[1.625rem] font-bold leading-none text-foreground">¿Dónde estamos?</h2>
           <p className="text-secondary text-xs">{businessData.address}</p>
           <div className="rounded-2xl overflow-hidden border border-border h-56 sm:h-72">
             <CheckoutMap lat={coords.lat} lng={coords.lng} />
@@ -143,7 +143,7 @@ export default function NosotrosPage() {
 
         {/* Redes sociales */}
         <div className="space-y-4 px-1">
-          <h2 className="text-foreground font-bold text-lg">Síguenos</h2>
+          <h2 className="font-display text-[1.625rem] font-bold leading-none text-foreground">Síguenos</h2>
           <div className="flex gap-3">
             {(Object.entries(businessData.social) as [keyof typeof SocialIcon, string][]).map(([key, url]) => (
               <a

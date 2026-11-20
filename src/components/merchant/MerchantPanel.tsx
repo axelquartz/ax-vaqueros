@@ -92,7 +92,7 @@ export function MerchantPanel() {
               {/* Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-border">
                 <div className="flex items-center gap-3">
-                  <span className="text-foreground font-mono font-semibold text-sm">{order.id}</span>
+                  <span className="font-display text-lg font-bold leading-none text-foreground tabular">{order.id}</span>
                   <span className="text-muted text-xs">{deliveryMethod?.label}</span>
                 </div>
                 {statusConfig && (

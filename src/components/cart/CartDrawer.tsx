@@ -42,7 +42,7 @@ export function CartDrawer() {
                   <p className="text-foreground text-sm font-medium">{item.name}</p>
                   {Object.keys(item.variantLabels).length > 0 && (
                     <p className="text-muted text-xs mt-0.5">
-                      {Object.values(item.variantLabels).join(' · ')}
+                      {Object.values(item.variantLabels).join(', ')}
                     </p>
                   )}
                 </div>
@@ -87,11 +87,12 @@ export function CartDrawer() {
           aria-expanded={expanded}
           className="flex items-center gap-2 flex-1 min-w-0"
         >
-          <span className="text-brand text-sm">🛒</span>
-          <span className="text-foreground text-sm font-medium">
-            {itemCount} {itemCount === 1 ? 'artículo' : 'artículos'}
+          <span className="flex flex-col items-start leading-none text-left">
+            <span className="font-display text-xl font-bold text-foreground tabular">${total}</span>
+            <span className="text-muted text-xs mt-1">
+              {itemCount} {itemCount === 1 ? 'artículo' : 'artículos'}
+            </span>
           </span>
-          <span className="text-muted text-xs">· ${total}</span>
           {/* text-xs: más pequeño que el texto de los botones (text-sm) */}
           <span className="ml-auto flex items-center gap-1 text-secondary text-xs font-medium whitespace-nowrap">
             Ver pedido

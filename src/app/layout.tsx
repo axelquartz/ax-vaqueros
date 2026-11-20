@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Big_Shoulders, Instrument_Sans } from 'next/font/google'
 import './globals.css'
 import { CartProvider } from '@/context/CartContext'
 
-const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
-const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] })
+const display = Big_Shoulders({ variable: '--font-big-shoulders', subsets: ['latin'], weight: ['600', '700', '800'] })
+const sans    = Instrument_Sans({ variable: '--font-instrument-sans', subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: "Vaquero's — Menú Digital",
@@ -12,13 +12,13 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#0C0C0C',
+  themeColor: '#14100D',
   colorScheme: 'dark',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" style={{ colorScheme: 'dark' }} className={`dark ${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="es" style={{ colorScheme: 'dark' }} className={`dark ${display.variable} ${sans.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <CartProvider>
           {children}

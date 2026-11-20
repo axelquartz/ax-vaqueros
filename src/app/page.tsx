@@ -12,6 +12,7 @@ import menuData from '@/data/menu.json'
 import type { Product } from '@/types/menu'
 import Link from 'next/link'
 import { Logo } from '@/components/brand/Logo'
+import { SiteNav } from '@/components/layout/SiteNav'
 
 export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState('todos')
@@ -40,18 +41,13 @@ export default function MenuPage() {
             <Logo variant="small" className="h-8 sm:hidden" />
             <Logo variant="long" className="hidden sm:block h-6" />
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 sm:gap-5">
             {storeStatus && (
-              <span className={`text-xs font-medium ${storeOpen ? 'text-green-400' : 'text-muted'}`}>
+              <span className={`text-xs font-medium ${storeOpen ? 'text-success' : 'text-muted'}`}>
                 {storeOpen ? '● Abierto' : '● Cerrado'}
               </span>
             )}
-            <a href="/nosotros" className="text-muted hover:text-foreground transition-colors text-xs">
-              Nosotros
-            </a>
-            <a href="/pedidos" className="text-muted hover:text-foreground transition-colors text-xs">
-              Mis pedidos
-            </a>
+            <SiteNav />
           </div>
         </div>
       </header>

@@ -38,9 +38,10 @@ export default function PedidosPage() {
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
           <button
             onClick={() => router.push('/')}
-            className="text-muted hover:text-foreground transition-colors text-sm"
+            className="text-muted hover:text-foreground transition-colors text-sm flex items-center gap-1.5"
           >
-            ← Volver
+            <svg aria-hidden viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M10 3.5 5.5 8l4.5 4.5" /></svg>
+            Menú
           </button>
           <span className="text-border">|</span>
           <h1 className="text-foreground text-sm font-medium">Mis pedidos</h1>
@@ -66,7 +67,7 @@ export default function PedidosPage() {
               onClick={() => router.push('/')}
               className="mt-4 text-brand text-sm hover:underline"
             >
-              Ir al menú →
+              Ir al menú
             </button>
           </div>
         )}
@@ -79,17 +80,15 @@ export default function PedidosPage() {
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-foreground font-mono font-semibold text-sm tracking-wider">
+                <p className="font-display text-xl font-bold leading-none text-foreground tabular">
                   {order.folio}
                 </p>
-                <p className="text-muted text-xs mt-1">
-                  {formatDate(order.timestamp)} · {methodLabel(order.deliveryMethod)}
-                </p>
+                <p className="text-muted text-xs mt-1.5">{formatDate(order.timestamp)}</p>
+                <p className="text-muted text-xs">{methodLabel(order.deliveryMethod)}</p>
                 <p className="text-muted text-xs">{order.itemCount} producto{order.itemCount !== 1 ? 's' : ''}</p>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-foreground font-semibold text-sm">${order.total}</p>
-                <p className="text-muted text-xs mt-1">Ver →</p>
+                <p className="font-display text-xl font-bold leading-none text-foreground tabular">${order.total}</p>
               </div>
             </div>
           </button>
@@ -97,7 +96,7 @@ export default function PedidosPage() {
 
         {mounted && orders.length > 0 && (
           <p className="text-muted text-xs text-center pt-2">
-            Guardados en este dispositivo · máx. 30 pedidos
+            Se guardan en este dispositivo, hasta 30 pedidos.
           </p>
         )}
       </main>

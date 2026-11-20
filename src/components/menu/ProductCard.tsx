@@ -46,11 +46,11 @@ export function ProductCard({ product, onSelect }: ProductCardProps) {
 
       {/* Info */}
       <div className="px-3 pt-3 pb-3 flex flex-col gap-1">
-        <h3 className="text-foreground font-bold text-base leading-snug line-clamp-2">{product.name}</h3>
+        <h3 className="font-display text-xl font-bold leading-[1.05] text-foreground line-clamp-2">{product.name}</h3>
         {product.description && (
           <p className="text-muted text-xs leading-relaxed line-clamp-2">{product.description}</p>
         )}
-        <p className="text-brand font-bold text-base mt-0.5">${product.price}</p>
+        <p className="font-display text-xl font-bold leading-none text-brand tabular mt-1.5">${product.price}</p>
       </div>
     </div>
   )

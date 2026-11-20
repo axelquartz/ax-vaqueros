@@ -17,6 +17,10 @@ import { saveOrder } from '@/lib/orderHistory'
 import { isStoreOpen, getStoreStatusText } from '@/lib/storeHours'
 import dynamic from 'next/dynamic'
 import { AddressAutocomplete } from '@/components/checkout/AddressAutocomplete'
+import { Upsell } from '@/components/checkout/Upsell'
+import { ProductSheet } from '@/components/menu/ProductSheet'
+import type { Product } from '@/types/menu'
+import type { CartItem } from '@/types/cart'
 const CheckoutMap = dynamic(
   () => import('@/components/checkout/CheckoutMap').then(m => m.CheckoutMap),
   { ssr: false }
@@ -28,18 +32,18 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 const stripeAppearance = {
   theme: 'night' as const,
   variables: {
-    colorPrimary:         '#C9A96E',
-    colorBackground:      '#1F1F1F',
-    colorText:            '#F2EDE4',
-    colorTextPlaceholder: '#5C5550',
+    colorPrimary:         '#C49B6C',
+    colorBackground:      '#28211B',
+    colorText:            '#F2EADD',
+    colorTextPlaceholder: '#8C7F6E',
     colorDanger:          '#E05C5C',
     borderRadius:         '12px',
     fontSizeBase:         '14px',
   },
   rules: {
-    '.Input':       { border: '1px solid #2E2E2E', boxShadow: 'none' },
-    '.Input:focus': { border: '1px solid #C9A96E', boxShadow: 'none' },
-    '.Label':       { color: '#9A9088', fontSize: '12px', fontWeight: '500' },
+    '.Input':       { border: '1px solid #352D25', boxShadow: 'none' },
+    '.Input:focus': { border: '1px solid #C49B6C', boxShadow: 'none' },
+    '.Label':       { color: '#B4A691', fontSize: '12px', fontWeight: '500' },
   },
 }
 
@@ -113,8 +117,8 @@ function StepReview({ onNext }: { onNext: () => void }) {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-foreground font-semibold text-base">Tu orden</h2>
-        <p className="text-muted text-xs mt-0.5">Revisa los productos antes de continuar</p>
+        <h2 className="font-display text-[1.625rem] font-bold leading-none text-foreground">Tu orden</h2>
+        <p className="text-muted text-sm mt-1.5">Revisa los productos antes de continuar</p>
       </div>
 
       {!open && statusText && (
@@ -131,7 +135,7 @@ function StepReview({ onNext }: { onNext: () => void }) {
             <div className="flex-1 min-w-0">
               <p className="text-foreground text-sm font-medium">{item.name}</p>
               {Object.values(item.variantLabels).length > 0 && (
-                <p className="text-muted text-xs mt-0.5">{Object.values(item.variantLabels).join(' · ')}</p>
+                <p className="text-muted text-sm mt-1.5">{Object.values(item.variantLabels).join(', ')}</p>
               )}
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -164,8 +168,8 @@ function StepDelivery({ selected, onSelect, onNext, onBack }: {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-foreground font-semibold text-base">¿Cómo lo recibes?</h2>
-        <p className="text-muted text-xs mt-0.5">Elige el método de entrega</p>
+        <h2 className="font-display text-[1.625rem] font-bold leading-none text-foreground">¿Cómo lo recibes?</h2>
+        <p className="text-muted text-sm mt-1.5">Elige el método de entrega</p>
       </div>
       <div className="space-y-2">
         {ordersData.deliveryMethods.map(method => (
@@ -206,8 +210,8 @@ function StepCustomer({ form, errors, deliveryMethod, onChange, onAddressChange,
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-foreground font-semibold text-base">Tus datos</h2>
-        <p className="text-muted text-xs mt-0.5">Para coordinar tu pedido</p>
+        <h2 className="font-display text-[1.625rem] font-bold leading-none text-foreground">Tus datos</h2>
+        <p className="text-muted text-sm mt-1.5">Para coordinar tu pedido</p>
       </div>
       <div className="space-y-3">
         <Input label="Nombre" placeholder="¿Cómo te llamamos?"
@@ -242,39 +246,50 @@ function StepCustomer({ form, errors, deliveryMethod, onChange, onAddressChange,
   )
 }
 
-// ─── Step 4: Pago demo (sin Stripe) ──────────────────────
-function DemoPaymentForm({ total, deliveryFee, folio, deliveryMethod, itemCount, onBack }: {
+// ─── Guardar pedido + ir a la confirmación ───────────────
+function toSavedItems(items: CartItem[]) {
+  return items.map(i => ({ name: i.name, quantity: i.quantity, subtotal: i.subtotal, variants: i.variantLabels }))
+}
+
+interface PaymentFormProps {
   total: number
   deliveryFee: number
   folio: string
   deliveryMethod: string
   itemCount: number
   onBack: () => void
-}) {
+  /** Bloque "¿Te falta algo?" — se muestra antes del desglose */
+  upsell?: React.ReactNode
+  /** El total cambió y el cobro se está actualizando: no permitir pagar aún */
+  refreshing?: boolean
+}
+
+// ─── Step 4: Pago demo (sin Stripe) ──────────────────────
+function DemoPaymentForm({ total, deliveryFee, folio, deliveryMethod, itemCount, onBack, upsell, refreshing }: PaymentFormProps) {
   const router = useRouter()
-  const { clearCart } = useCart()
+  const { items, clearCart } = useCart()
   const [submitting, setSubmitting] = useState(false)
   const orderTotal = total + deliveryFee
 
   const handlePay = async () => {
     setSubmitting(true)
     await new Promise(r => setTimeout(r, 900))
-    saveOrder({ folio, timestamp: new Date().toISOString(), total: orderTotal, deliveryMethod, itemCount })
+    saveOrder({ folio, timestamp: new Date().toISOString(), total: orderTotal, deliveryMethod, itemCount, deliveryFee, items: toSavedItems(items) })
     clearCart()
-    router.push(`/order/${folio}`)
+    router.push(`/order/${folio}?pagado=1`)
   }
 
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-foreground font-semibold text-base">Pago</h2>
-        <p className="text-muted text-xs mt-0.5">Tus datos están protegidos por Stripe</p>
+        <h2 className="font-display text-[1.625rem] font-bold leading-none text-foreground">Pago</h2>
+        <p className="text-muted text-sm mt-1.5">Tus datos están protegidos por Stripe</p>
       </div>
 
       {/* Aviso modo demo */}
       <div className="bg-warning/10 border border-warning/30 rounded-xl px-4 py-3">
         <p className="text-warning text-xs font-medium">Modo demo activo</p>
-        <p className="text-muted text-xs mt-0.5">
+        <p className="text-muted text-sm mt-1.5">
           Configura <code className="text-brand">STRIPE_SECRET_KEY</code> en <code className="text-brand">.env.local</code> para habilitar pagos reales.
         </p>
       </div>
@@ -293,6 +308,8 @@ function DemoPaymentForm({ total, deliveryFee, folio, deliveryMethod, itemCount,
           </div>
         </div>
       </div>
+
+      {upsell}
 
       {/* Desglose */}
       <div className="bg-surface border border-border rounded-xl px-4 py-3 space-y-2">
@@ -314,8 +331,8 @@ function DemoPaymentForm({ total, deliveryFee, folio, deliveryMethod, itemCount,
 
       <div className="flex gap-3">
         <Button variant="ghost" onClick={onBack} disabled={submitting} className="flex-1">Atrás</Button>
-        <Button onClick={handlePay} disabled={submitting} className="flex-1">
-          {submitting ? 'Procesando...' : `Simular pago · $${orderTotal}`}
+        <Button onClick={handlePay} disabled={submitting || refreshing} className="flex-1">
+          {submitting ? 'Procesando...' : refreshing ? 'Actualizando total…' : `Simular pago de $${orderTotal}`}
         </Button>
       </div>
     </div>
@@ -323,18 +340,11 @@ function DemoPaymentForm({ total, deliveryFee, folio, deliveryMethod, itemCount,
 }
 
 // ─── Step 4: Pago (dentro de Elements) ───────────────────
-function PaymentForm({ total, deliveryFee, folio, deliveryMethod, itemCount, onBack }: {
-  total: number
-  deliveryFee: number
-  folio: string
-  deliveryMethod: string
-  itemCount: number
-  onBack: () => void
-}) {
+function PaymentForm({ total, deliveryFee, folio, deliveryMethod, itemCount, onBack, upsell, refreshing }: PaymentFormProps) {
   const stripe   = useStripe()
   const elements = useElements()
   const router   = useRouter()
-  const { clearCart } = useCart()
+  const { items, clearCart } = useCart()
 
   const [submitting, setSubmitting] = useState(false)
   const [stripeError, setStripeError] = useState<string | null>(null)
@@ -358,17 +368,17 @@ function PaymentForm({ total, deliveryFee, folio, deliveryMethod, itemCount, onB
       setStripeError(error.message ?? 'Error al procesar el pago')
       setSubmitting(false)
     } else {
-      saveOrder({ folio, timestamp: new Date().toISOString(), total: orderTotal, deliveryMethod, itemCount })
+      saveOrder({ folio, timestamp: new Date().toISOString(), total: orderTotal, deliveryMethod, itemCount, deliveryFee, items: toSavedItems(items) })
       clearCart()
-      router.push(`/order/${folio}`)
+      router.push(`/order/${folio}?pagado=1`)
     }
   }
 
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-foreground font-semibold text-base">Pago</h2>
-        <p className="text-muted text-xs mt-0.5">Tus datos están protegidos por Stripe</p>
+        <h2 className="font-display text-[1.625rem] font-bold leading-none text-foreground">Pago</h2>
+        <p className="text-muted text-sm mt-1.5">Tus datos están protegidos por Stripe</p>
       </div>
 
       {/* Stripe PaymentElement */}
@@ -379,6 +389,8 @@ function PaymentForm({ total, deliveryFee, folio, deliveryMethod, itemCount, onB
       {stripeError && (
         <p className="text-error text-xs px-1">{stripeError}</p>
       )}
+
+      {upsell}
 
       {/* Desglose */}
       <div className="bg-surface border border-border rounded-xl px-4 py-3 space-y-2">
@@ -400,8 +412,8 @@ function PaymentForm({ total, deliveryFee, folio, deliveryMethod, itemCount, onB
 
       <div className="flex gap-3">
         <Button variant="ghost" onClick={onBack} disabled={submitting} className="flex-1">Atrás</Button>
-        <Button onClick={handlePay} disabled={submitting || !stripe} className="flex-1">
-          {submitting ? 'Procesando...' : `Pagar $${orderTotal}`}
+        <Button onClick={handlePay} disabled={submitting || !stripe || refreshing} className="flex-1">
+          {submitting ? 'Procesando...' : refreshing ? 'Actualizando total…' : `Pagar $${orderTotal}`}
         </Button>
       </div>
     </div>
@@ -422,6 +434,8 @@ export function CheckoutFlow() {
   const [isDemoMode, setIsDemoMode]   = useState(false)
   const [folio, setFolio]             = useState<string>('')
   const [creatingIntent, setCreatingIntent] = useState(false)
+  const [intentAmount, setIntentAmount] = useState<number | null>(null)
+  const [sheetProduct, setSheetProduct] = useState<Product | null>(null)
 
   const selectedMethod = ordersData.deliveryMethods.find(m => m.id === deliveryMethod)!
   const orderTotal = total + selectedMethod.price
@@ -468,12 +482,30 @@ export function CheckoutFlow() {
     setCreatingIntent(true)
     try {
       const newFolio = `ORD-${String(Math.floor(Math.random() * 9000) + 1000)}`
+      const amount = orderTotal
+      const data = await requestIntent(newFolio, amount)
+
+      setFolio(newFolio)
+      setClientSecret(data.clientSecret)
+      setIsDemoMode(!!data.demo)
+      setIntentAmount(amount)
+      setStep('payment')
+    } catch (err) {
+      console.error(err)
+      setErrors({ name: 'Error al conectar con el servidor de pagos. Intenta de nuevo.' })
+    } finally {
+      setCreatingIntent(false)
+    }
+  }
+
+  /** Crea el Payment Intent con el carrito y datos actuales */
+  async function requestIntent(intentFolio: string, amount: number): Promise<{ clientSecret: string; demo?: boolean }> {
       const res = await fetch('/api/checkout/payment-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: orderTotal,
-          folio:  newFolio,
+          amount,
+          folio:  intentFolio,
           deliveryMethod,
           deliveryFee: selectedMethod.price,
           customer: {
@@ -495,18 +527,32 @@ export function CheckoutFlow() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-
-      setFolio(newFolio)
-      setClientSecret(data.clientSecret)
-      setIsDemoMode(!!data.demo)
-      setStep('payment')
-    } catch (err) {
-      console.error(err)
-      setErrors({ name: 'Error al conectar con el servidor de pagos. Intenta de nuevo.' })
-    } finally {
-      setCreatingIntent(false)
-    }
+      return data
   }
+
+  // Si el total cambia en el paso de pago (p. ej. "¿Te falta algo?"), el Payment
+  // Intent de Stripe quedó con el monto anterior: se crea uno nuevo con el total
+  // actual y se bloquea el botón de pago mientras tanto.
+  const intentStale = step === 'payment' && !isDemoMode && intentAmount !== null && intentAmount !== orderTotal
+  useEffect(() => {
+    if (!intentStale) return
+    let cancelled = false
+    const amount = orderTotal
+    const t = setTimeout(() => {
+      requestIntent(folio, amount)
+        .then(data => {
+          if (cancelled) return
+          setClientSecret(data.clientSecret)
+          setIntentAmount(amount)
+        })
+        .catch(err => console.error('No se pudo actualizar el cobro', err))
+    }, 400)
+    return () => { cancelled = true; clearTimeout(t) }
+    // requestIntent lee el carrito/form actuales; basta con reaccionar al total
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [intentStale, orderTotal, folio])
+
+  const upsell = <Upsell onOpenProduct={setSheetProduct} />
 
   if (items.length === 0 && step !== 'payment') {
     return (
@@ -557,9 +603,11 @@ export function CheckoutFlow() {
               deliveryMethod={deliveryMethod}
               itemCount={items.reduce((s, i) => s + i.quantity, 0)}
               onBack={() => setStep('customer')}
+              upsell={upsell}
             />
           ) : (
             <Elements
+              key={clientSecret}
               stripe={stripePromise}
               options={{ clientSecret, appearance: stripeAppearance }}
             >
@@ -570,11 +618,16 @@ export function CheckoutFlow() {
                 deliveryMethod={deliveryMethod}
                 itemCount={items.reduce((s, i) => s + i.quantity, 0)}
                 onBack={() => setStep('customer')}
+                upsell={upsell}
+                refreshing={intentStale}
               />
             </Elements>
           )
         )}
       </div>
+
+      {/* Sheet para recomendaciones con variantes obligatorias (p. ej. refresco) */}
+      <ProductSheet product={sheetProduct} onClose={() => setSheetProduct(null)} />
     </div>
   )
 }

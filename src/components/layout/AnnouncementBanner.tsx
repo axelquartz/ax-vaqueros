@@ -6,7 +6,7 @@ import announcementsData from '@/data/announcements.json'
 type BannerType = 'info' | 'warning' | 'promo'
 
 const styles: Record<BannerType, string> = {
-  info:    'bg-blue-500/10  border-blue-500/30  text-blue-300',
+  info:    'bg-elevated     border-border       text-secondary',
   warning: 'bg-warning/10  border-warning/30   text-warning',
   promo:   'bg-brand/10    border-brand/30     text-brand',
 }

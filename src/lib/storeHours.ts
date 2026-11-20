@@ -56,11 +56,11 @@ export function getStoreStatusText(): string {
     const openMin  = toMin(today.open)
     const closeMin = toMin(today.close)
     if (minutes >= openMin && minutes < closeMin) {
-      return `Abierto · Cierra a las ${today.close}`
+      return `Abierto hasta las ${today.close}`
     }
     // Hoy abre más tarde
     if (minutes < openMin) {
-      return `Cerrado · Abre hoy a las ${today.open}`
+      return `Cerrado. Abre hoy a las ${today.open}`
     }
   }
 
@@ -69,8 +69,8 @@ export function getStoreStatusText(): string {
     const nextDay  = (day + i) % 7
     const next     = schedule.find(s => s.day === nextDay)
     if (next?.open) {
-      const when = i === 1 ? 'mañana' : next.label
-      return `Cerrado · Abre el ${when} a las ${next.open}`
+      const when = next.label
+      return `Cerrado. Abre ${i === 1 ? 'mañana' : `el ${when}`} a las ${next.open}`
     }
   }
   return 'Cerrado'

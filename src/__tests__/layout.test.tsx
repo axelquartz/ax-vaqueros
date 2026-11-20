@@ -1,6 +1,6 @@
 vi.mock('next/font/google', () => ({
-  Geist: () => ({ variable: 'geist' }),
-  Geist_Mono: () => ({ variable: 'geist-mono' }),
+  Big_Shoulders: () => ({ variable: 'big-shoulders' }),
+  Instrument_Sans: () => ({ variable: 'instrument-sans' }),
 }))
 
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -9,7 +9,7 @@ import RootLayout, { viewport, metadata } from '@/app/layout'
 describe('RootLayout', () => {
   it('exporta viewport oscuro', () => {
     expect(viewport.colorScheme).toBe('dark')
-    expect(viewport.themeColor).toBe('#0C0C0C')
+    expect(viewport.themeColor).toBe('#14100D')
   })
 
   it('el <html> lleva clase dark y color-scheme', () => {

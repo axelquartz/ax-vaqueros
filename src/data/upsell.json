@@ -1,0 +1,13 @@
+{
+  "title": "¿Te falta algo?",
+  "subtitle": "Agrégalo antes de pagar",
+  "maxItems": 4,
+  "productIds": [
+    "refresco",
+    "agua",
+    "punio-papas-francesa",
+    "punio-papas-gajo",
+    "punio-salchipulpos",
+    "dedos-queso-5"
+  ]
+}

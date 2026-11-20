@@ -35,8 +35,8 @@ export function CheckoutMap({ lat, lng }: { lat: number; lng: number }) {
   const pinIcon = L.divIcon({
     className: '',
     html: `<div style="display:flex;flex-direction:column;align-items:center">
-      <div style="width:14px;height:14px;background:#C9A96E;border:2px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.6)"></div>
-      <div style="width:2px;height:10px;background:#C9A96E;margin-top:-1px"></div>
+      <div style="width:14px;height:14px;background:#C49B6C;border:2px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.6)"></div>
+      <div style="width:2px;height:10px;background:#C49B6C;margin-top:-1px"></div>
     </div>`,
     iconSize:   [14, 24],
     iconAnchor: [7, 24],

@@ -1,12 +1,26 @@
 const STORAGE_KEY = 'ax_orders'
 const MAX_ORDERS  = 30
 
+export interface SavedOrderItem {
+  name:     string
+  quantity: number
+  subtotal: number
+  variants: Record<string, string>
+}
+
 export interface SavedOrder {
   folio:          string
   timestamp:      string   // ISO
   total:          number
   deliveryMethod: string
   itemCount:      number
+  /** Detalle para la pantalla de confirmación (pedidos guardados antes no lo traen) */
+  items?:         SavedOrderItem[]
+  deliveryFee?:   number
+}
+
+export function findOrder(folio: string): SavedOrder | undefined {
+  return readOrders().find(o => o.folio === folio)
 }
 
 export function saveOrder(order: SavedOrder): void {
