@@ -170,7 +170,7 @@
     {
       "id": "ORD-0040",
       "createdAt": "-52",
-      "updatedAt": "-52",
+      "updatedAt": "-30",
       "status": "delivered",
       "deliveryMethod": "pickup",
       "customer": {

@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNow } from '@/hooks/useNow'
 import { useOrders } from '@/hooks/useOrders'
 import { getOrderRepository } from '@/lib/orders/repository'
 import { ACTIVE_STATUSES, statusLabel, type OrderStatusId } from '@/lib/orders/status'
@@ -11,8 +12,8 @@ type Tab = 'active' | 'delivered' | 'cancelled'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'active',    label: 'Activos' },
-  { id: 'delivered', label: 'Entregados' },
-  { id: 'cancelled', label: 'Cancelados' },
+  { id: 'delivered', label: 'Entregados hoy' },
+  { id: 'cancelled', label: 'Cancelados hoy' },
 ]
 
 const COLUMN_TITLE: Partial<Record<OrderStatusId, string>> = {
@@ -24,34 +25,6 @@ const COLUMN_TITLE: Partial<Record<OrderStatusId, string>> = {
 
 const byOldest = (a: Order, b: Order) => a.createdAt.localeCompare(b.createdAt)
 const byNewest = (a: Order, b: Order) => b.updatedAt.localeCompare(a.updatedAt)
-
-/**
- * Reloj compartido que avanza cada 30 s para refrescar "Hace N min".
- * Store externo (no Date.now() en render): en el servidor vale 0 y el
- * panel no se prerenderiza con una hora congelada.
- */
-let clockNow = 0
-const clockListeners = new Set<() => void>()
-let clockTimer: ReturnType<typeof setInterval> | undefined
-function subscribeClock(cb: () => void) {
-  clockListeners.add(cb)
-  if (!clockTimer) {
-    // Al (re)montar el panel, la hora se actualiza de inmediato: React re-lee
-    // el snapshot tras suscribirse y re-renderiza si cambió
-    clockNow = Date.now()
-    clockTimer = setInterval(() => { clockNow = Date.now(); clockListeners.forEach(l => l()) }, 30_000)
-  }
-  return () => {
-    clockListeners.delete(cb)
-    if (clockListeners.size === 0) { clearInterval(clockTimer); clockTimer = undefined }
-  }
-}
-const getClock = () => (clockNow ||= Date.now())
-const getServerClock = () => 0
-
-function useNow(): number {
-  return useSyncExternalStore(subscribeClock, getClock, getServerClock)
-}
 
 /** Campanita de dos tonos con Web Audio (sin archivos) */
 function playChime(ctx: AudioContext) {
@@ -109,8 +82,10 @@ export function MerchantPanel() {
 
   // ── Datos derivados
   const active    = useMemo(() => orders.filter(o => ACTIVE_STATUSES.includes(o.status as OrderStatusId)).sort(byOldest), [orders])
-  const delivered = useMemo(() => orders.filter(o => o.status === 'delivered').sort(byNewest), [orders])
-  const cancelled = useMemo(() => orders.filter(o => o.status === 'cancelled').sort(byNewest), [orders])
+  // Historial del turno: solo lo cerrado hoy (el resto vive en el dashboard)
+  const dayStart  = useMemo(() => { const d = new Date(now); d.setHours(0, 0, 0, 0); return d.toISOString() }, [now])
+  const delivered = useMemo(() => orders.filter(o => o.status === 'delivered' && o.updatedAt >= dayStart).sort(byNewest), [orders, dayStart])
+  const cancelled = useMemo(() => orders.filter(o => o.status === 'cancelled' && o.updatedAt >= dayStart).sort(byNewest), [orders, dayStart])
   const pendingCount = active.filter(o => o.status === 'pending').length
   const counts: Record<Tab, number> = { active: active.length, delivered: delivered.length, cancelled: cancelled.length }
 
@@ -210,7 +185,7 @@ export function MerchantPanel() {
         const list = tab === 'delivered' ? delivered : cancelled
         return list.length === 0 ? (
           <p className="text-muted text-sm py-16 text-center">
-            {tab === 'delivered' ? 'Aún no hay pedidos entregados.' : 'No hay pedidos cancelados.'}
+            {tab === 'delivered' ? 'Aún no hay pedidos entregados hoy.' : 'No hay pedidos cancelados hoy.'}
           </p>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 items-start">{list.map(card)}</div>

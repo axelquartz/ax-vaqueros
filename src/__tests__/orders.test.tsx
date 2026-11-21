@@ -2,7 +2,8 @@ import { render, screen, act, within, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createLocalOrderRepository, getOrderRepository, resetOrderRepository, STORAGE_KEY, OrderTransitionError } from '@/lib/orders/repository'
 import { canTransition, nextStatus, canCancel, ACTION_LABEL } from '@/lib/orders/status'
-import { resolveTimestamp, seedOrders } from '@/lib/orders/seed'
+import { resolveTimestamp, seedActiveOrders } from '@/lib/orders/seed'
+import { generateHistory } from '@/lib/orders/history'
 import menu from '@/data/menu.json'
 import { formatElapsed, minutesSince } from '@/components/merchant/OrderCard'
 import ordersData from '@/data/orders.json'
@@ -48,7 +49,7 @@ describe('seed', () => {
   })
 
   it('los pedidos de ejemplo usan productos y precios reales del menú', () => {
-    for (const o of seedOrders()) {
+    for (const o of seedActiveOrders()) {
       for (const item of o.items) {
         const product = menu.products.find(p => p.id === item.productId)
         expect(product, item.productId).toBeDefined()
@@ -61,11 +62,52 @@ describe('seed', () => {
   })
 })
 
+describe('historial de ejemplo', () => {
+  const NOW = new Date(2026, 10, 21, 20, 30).getTime() // sábado 8:30 p.m.
+  const history = generateHistory(NOW)
+
+  it('cubre un año y crece con el tiempo', () => {
+    const first = Math.min(...history.map(o => new Date(o.createdAt).getTime()))
+    expect(NOW - first).toBeGreaterThan(360 * 86_400_000)
+    const inMonth = (m: number) => history.filter(o => new Date(o.createdAt).getMonth() === m && new Date(o.createdAt).getFullYear() === 2026).length
+    expect(inMonth(9)).toBeGreaterThan(inMonth(0)) // oct > ene
+  })
+
+  it('es determinista, sin folios repetidos ni choques con el checkout', () => {
+    expect(generateHistory(NOW)).toEqual(history)
+    const ids = history.map(o => o.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    expect(ids.every(id => /^ORD-\d{5}$/.test(id))).toBe(true)
+  })
+
+  it('respeta el horario: lunes cerrado, nada en el futuro', () => {
+    expect(history.some(o => new Date(o.createdAt).getDay() === 1)).toBe(false)
+    expect(history.every(o => new Date(o.updatedAt).getTime() <= NOW)).toBe(true)
+    expect(history.every(o => ['delivered', 'cancelled'].includes(o.status))).toBe(true)
+  })
+
+  it('totales consistentes con el menú', () => {
+    for (const o of history) {
+      expect(o.subtotal).toBe(o.items.reduce((s, i) => s + i.subtotal, 0))
+      expect(o.total).toBe(o.subtotal + o.deliveryFee)
+    }
+  })
+})
+
 describe('LocalOrderRepository', () => {
   it('siembra los pedidos de ejemplo la primera vez', () => {
     const repo = createLocalOrderRepository(localStorage)
-    expect(repo.list().map(o => o.id)).toEqual(ordersData.orders.map(o => o.id))
-    expect(localStorage.getItem(STORAGE_KEY)).not.toBeNull()
+    const ids = repo.list().map(o => o.id)
+    expect(ids.slice(0, ordersData.orders.length)).toEqual(ordersData.orders.map(o => o.id))
+    expect(ids.length).toBeGreaterThan(ordersData.orders.length) // + historial en memoria
+    // En localStorage solo van los pedidos vivos: el historial no cabe
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!)
+    expect(stored.map((o: Order) => o.id)).toEqual(ordersData.orders.map(o => o.id))
+  })
+
+  it('sin historial cuando se desactiva', () => {
+    const repo = createLocalOrderRepository(localStorage, { withHistory: false })
+    expect(repo.list()).toHaveLength(ordersData.orders.length)
   })
 
   it('snapshot estable mientras no haya cambios', () => {
@@ -105,7 +147,7 @@ describe('LocalOrderRepository', () => {
 
   it('datos corruptos: vuelve a sembrar', () => {
     localStorage.setItem(STORAGE_KEY, '{roto')
-    expect(createLocalOrderRepository(localStorage).list().length).toBe(ordersData.orders.length)
+    expect(createLocalOrderRepository(localStorage, { withHistory: false }).list().length).toBe(ordersData.orders.length)
   })
 })
 
@@ -159,7 +201,7 @@ describe('MerchantPanel', () => {
     await userEvent.click(within(card('ORD-0042')).getByRole('button', { name: 'Cancelar' }))
     await userEvent.click(within(card('ORD-0042')).getByRole('button', { name: 'Sí, cancelar' }))
     expect(screen.queryByRole('article', { name: 'Pedido ORD-0042' })).not.toBeInTheDocument()
-    await userEvent.click(screen.getByRole('tab', { name: /Cancelados 1/ }))
+    await userEvent.click(screen.getByRole('tab', { name: /Cancelados hoy/ }))
     expect(card('ORD-0042')).toBeInTheDocument()
   })
 
