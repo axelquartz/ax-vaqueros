@@ -1,135 +1,205 @@
 {
   "deliveryMethods": [
-    { "id": "pickup",   "label": "Recoger en mostrador", "price": 0,  "eta": "15–20 min" },
-    { "id": "table",    "label": "Mesa",                 "price": 0,  "eta": "10–15 min" },
-    { "id": "delivery", "label": "Domicilio",            "price": 45, "eta": "35–50 min" }
-  ],
-
-  "statuses": [
-    { "id": "pending",    "label": "Recibido",      "color": "warning" },
-    { "id": "confirmed",  "label": "Confirmado",    "color": "brand"   },
-    { "id": "preparing",  "label": "Preparando",    "color": "brand"   },
-    { "id": "ready",      "label": "Listo",         "color": "success" },
-    { "id": "delivered",  "label": "Entregado",     "color": "success" },
-    { "id": "cancelled",  "label": "Cancelado",     "color": "error"   }
-  ],
-
-  "orders": [
     {
-      "id": "ORD-0041",
-      "createdAt": "2024-11-19T14:32:00Z",
-      "updatedAt": "2024-11-19T14:35:00Z",
-      "status": "preparing",
-      "deliveryMethod": "pickup",
-      "customer": {
-        "name": "Carlos Mendoza",
-        "phone": "8112345678",
-        "notes": "Sin cebolla en los tacos, por favor."
-      },
-      "items": [
-        {
-          "productId": "taco-vaquero",
-          "name": "Taco Vaquero's",
-          "quantity": 3,
-          "unitPrice": 35,
-          "variants": { "protein": "pastor", "tortilla": "maiz", "salsa": "verde" },
-          "subtotal": 105
-        },
-        {
-          "productId": "agua-fresca",
-          "name": "Agua Fresca",
-          "quantity": 1,
-          "unitPrice": 25,
-          "variants": { "drink_size": "chico", "flavor": "jamaica" },
-          "subtotal": 25
-        }
-      ],
-      "subtotal": 130,
-      "deliveryFee": 0,
-      "total": 130
+      "id": "pickup",
+      "label": "Recoger en mostrador",
+      "price": 0,
+      "eta": "15–20 min"
     },
     {
-      "id": "ORD-0042",
-      "createdAt": "2024-11-19T14:40:00Z",
-      "updatedAt": "2024-11-19T14:40:00Z",
+      "id": "table",
+      "label": "Mesa",
+      "price": 0,
+      "eta": "10–15 min"
+    },
+    {
+      "id": "delivery",
+      "label": "Domicilio",
+      "price": 45,
+      "eta": "35–50 min"
+    }
+  ],
+  "statuses": [
+    {
+      "id": "pending",
+      "label": "Recibido",
+      "color": "warning"
+    },
+    {
+      "id": "confirmed",
+      "label": "Confirmado",
+      "color": "brand"
+    },
+    {
+      "id": "preparing",
+      "label": "Preparando",
+      "color": "brand"
+    },
+    {
+      "id": "ready",
+      "label": "Listo",
+      "color": "success"
+    },
+    {
+      "id": "delivered",
+      "label": "Entregado",
+      "color": "success"
+    },
+    {
+      "id": "cancelled",
+      "label": "Cancelado",
+      "color": "error"
+    }
+  ],
+  "orders": [
+    {
+      "id": "ORD-0043",
+      "createdAt": "-4",
+      "updatedAt": "-4",
       "status": "pending",
       "deliveryMethod": "delivery",
       "customer": {
-        "name": "Sofía Reyes",
-        "phone": "8198765432",
-        "address": "Av. Constitución 450, Col. Centro, Monterrey",
-        "notes": ""
+        "name": "Mariana López",
+        "phone": "8119876543",
+        "address": "Av. Constitución 1450, Centro",
+        "notes": "Tocar el timbre dos veces"
       },
       "items": [
         {
-          "productId": "burrito-clasico",
-          "name": "Burrito Clásico",
-          "quantity": 2,
-          "unitPrice": 95,
-          "variants": { "protein": "asada", "salsa": "roja" },
-          "subtotal": 190
-        },
-        {
-          "productId": "guacamole",
-          "name": "Guacamole",
-          "quantity": 2,
-          "unitPrice": 30,
-          "variants": {},
-          "subtotal": 60
+          "productId": "alitas-8",
+          "name": "Alitas 8 pzas",
+          "quantity": 1,
+          "unitPrice": 240,
+          "variants": {
+            "sabor": "Mango Habanero",
+            "dip": "Ranch",
+            "totopos": "Con totopos"
+          },
+          "subtotal": 240
         },
         {
           "productId": "refresco",
           "name": "Refresco",
           "quantity": 2,
           "unitPrice": 25,
-          "variants": { "drink_size": "chico" },
+          "variants": {
+            "drink_size": "Chico (355 ml)"
+          },
           "subtotal": 50
         }
       ],
-      "subtotal": 300,
+      "subtotal": 290,
       "deliveryFee": 45,
-      "total": 345
+      "total": 335
     },
     {
-      "id": "ORD-0040",
-      "createdAt": "2024-11-19T14:10:00Z",
-      "updatedAt": "2024-11-19T14:28:00Z",
-      "status": "delivered",
+      "id": "ORD-0042",
+      "createdAt": "-11",
+      "updatedAt": "-11",
+      "status": "confirmed",
       "deliveryMethod": "table",
       "customer": {
-        "name": "Mesa 4",
-        "phone": "",
-        "notes": "Extra servilletas"
+        "name": "Jorge Ramírez",
+        "phone": "8112223344",
+        "tableNumber": "6",
+        "notes": ""
       },
       "items": [
         {
-          "productId": "quesadilla-especial",
-          "name": "Quesadilla Especial",
+          "productId": "tostilocos",
+          "name": "Tostilocos",
           "quantity": 1,
-          "unitPrice": 75,
-          "variants": { "protein": "pollo", "salsa": "habanero" },
-          "subtotal": 75
+          "unitPrice": 80,
+          "variants": {
+            "ingredientes": "Con todo ✨"
+          },
+          "subtotal": 80
         },
         {
-          "productId": "taco-costilla",
-          "name": "Taco de Costilla",
+          "productId": "banderilla-crunch-queso",
+          "name": "Banderilla Crunch con Queso",
           "quantity": 2,
-          "unitPrice": 45,
-          "variants": { "tortilla": "maiz", "salsa": "verde" },
-          "subtotal": 90
+          "unitPrice": 85,
+          "variants": {
+            "salsas": "Catsup"
+          },
+          "subtotal": 170
+        }
+      ],
+      "subtotal": 250,
+      "deliveryFee": 0,
+      "total": 250
+    },
+    {
+      "id": "ORD-0041",
+      "createdAt": "-19",
+      "updatedAt": "-19",
+      "status": "preparing",
+      "deliveryMethod": "pickup",
+      "customer": {
+        "name": "Carlos Mendoza",
+        "phone": "8112345678",
+        "notes": "Salsa aparte, por favor"
+      },
+      "items": [
+        {
+          "productId": "boneless-10",
+          "name": "Boneless 10 pzas",
+          "quantity": 1,
+          "unitPrice": 190,
+          "variants": {
+            "sabor": "BBQ",
+            "dip": "Chipotle",
+            "totopos": "Con totopos"
+          },
+          "subtotal": 190
         },
         {
-          "productId": "elote-esquite",
-          "name": "Esquite",
+          "productId": "punio-papas-gajo",
+          "name": "Puño de Papas Gajo",
           "quantity": 1,
           "unitPrice": 35,
           "variants": {},
           "subtotal": 35
         }
       ],
-      "subtotal": 200,
+      "subtotal": 225,
       "deliveryFee": 0,
-      "total": 200
+      "total": 225
+    },
+    {
+      "id": "ORD-0040",
+      "createdAt": "-52",
+      "updatedAt": "-30",
+      "status": "delivered",
+      "deliveryMethod": "pickup",
+      "customer": {
+        "name": "Ana Torres",
+        "phone": "8115556677",
+        "notes": ""
+      },
+      "items": [
+        {
+          "productId": "dedos-queso-5",
+          "name": "Dedos de Queso 5 pzas",
+          "quantity": 1,
+          "unitPrice": 170,
+          "variants": {},
+          "subtotal": 170
+        },
+        {
+          "productId": "agua",
+          "name": "Agua Natural",
+          "quantity": 1,
+          "unitPrice": 15,
+          "variants": {},
+          "subtotal": 15
+        }
+      ],
+      "subtotal": 185,
+      "deliveryFee": 0,
+      "total": 185
     }
-  ]
+  ],
+  "_comment": "createdAt/updatedAt '-N' = hace N minutos; se resuelven al cargar (src/lib/orders/seed.ts)"
 }

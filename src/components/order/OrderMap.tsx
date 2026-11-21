@@ -1,136 +1,97 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { createDarkMap } from '@/lib/leaflet'
 
 // ─── Coordenadas mock — Monterrey ─────────────────────────
 const RESTAURANT = { lat: 25.6866, lng: -100.3161 }
 const CUSTOMER   = { lat: 25.6980, lng: -100.3295 }
+const CENTER: [number, number] = [(RESTAURANT.lat + CUSTOMER.lat) / 2, (RESTAURANT.lng + CUSTOMER.lng) / 2]
 
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t
 }
 
-// ─── Fix Leaflet default icon path (Next.js / Webpack) ────
-function fixLeafletIcons() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  delete (L.Icon.Default.prototype as any)._getIconUrl
-  L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-    iconUrl:       'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-    shadowUrl:     'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  })
+function riderPosition(progress: number): [number, number] {
+  return [lerp(RESTAURANT.lat, CUSTOMER.lat, progress), lerp(RESTAURANT.lng, CUSTOMER.lng, progress)]
 }
 
-// ─── Actualiza la vista del mapa cuando el rider se mueve ──
-function MapPanner({ center }: { center: [number, number] }) {
-  const map = useMap()
-  useEffect(() => { map.panTo(center, { animate: true, duration: 0.5 }) }, [center, map])
-  return null
-}
+// ─── Íconos (se crean en el cliente, nunca a nivel de módulo en SSR) ──
+const restaurantIcon = () => L.divIcon({
+  className: '',
+  html: `<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+    <div style="background:#14100D;border:1px solid #C49B6C;padding:5px 10px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.6);line-height:0">
+      <img src="/images/brand/logo-small.png" alt="Vaquero's" style="height:18px;width:auto;display:block" />
+    </div>
+    <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #C49B6C"></div>
+  </div>`,
+  iconSize:   [62, 36],
+  iconAnchor: [31, 36],
+})
 
-// ─── Mapa con animación del repartidor ────────────────────
-function DeliveryMap() {
+const customerIcon = () => L.divIcon({
+  className: '',
+  html: `<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+    <div style="background:#6DB38A;color:#14100D;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.5)">Tu dirección</div>
+    <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #6DB38A"></div>
+  </div>`,
+  iconSize:   [90, 32],
+  iconAnchor: [45, 32],
+})
+
+const riderIcon = () => L.divIcon({
+  className: '',
+  html: `<div style="font-size:28px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6));transform:translateY(-8px)">🛵</div>`,
+  iconSize:   [32, 32],
+  iconAnchor: [16, 32],
+})
+
+// ─── Mapa con simulación del repartidor ───────────────────
+export function OrderMap() {
+  const el    = useRef<HTMLDivElement>(null)
+  const map   = useRef<L.Map | null>(null)
+  const rider = useRef<L.Marker | null>(null)
   const [progress, setProgress] = useState(0.08)
+  const progressRef = useRef(progress)
+  useEffect(() => { progressRef.current = progress })
 
+  // Crear / destruir el mapa (ver nota en src/lib/leaflet.ts)
+  useEffect(() => {
+    if (!el.current) return
+    const m = createDarkMap(el.current, CENTER, 14)
+    L.marker([RESTAURANT.lat, RESTAURANT.lng], { icon: restaurantIcon() }).bindPopup("Vaquero's").addTo(m)
+    L.marker([CUSTOMER.lat, CUSTOMER.lng], { icon: customerIcon() }).bindPopup('Tu dirección').addTo(m)
+    rider.current = L.marker(riderPosition(progressRef.current), { icon: riderIcon() })
+      .bindPopup('Repartidor en camino')
+      .addTo(m)
+    map.current = m
+    return () => {
+      m.remove()
+      map.current = null
+      rider.current = null
+    }
+  }, [])
+
+  // Simulación: el repartidor avanza hacia el cliente
   useEffect(() => {
     const id = setInterval(() => {
-      setProgress(p => {
-        if (p >= 1) { clearInterval(id); return 1 }
-        return Math.min(p + 0.004, 1)
-      })
+      setProgress(p => (p >= 1 ? 1 : Math.min(p + 0.004, 1)))
     }, 300)
     return () => clearInterval(id)
   }, [])
 
-  const riderPos: [number, number] = [
-    lerp(RESTAURANT.lat, CUSTOMER.lat, progress),
-    lerp(RESTAURANT.lng, CUSTOMER.lng, progress),
-  ]
-
-  const center: [number, number] = [
-    (RESTAURANT.lat + CUSTOMER.lat) / 2,
-    (RESTAURANT.lng + CUSTOMER.lng) / 2,
-  ]
-
-  // Iconos definidos dentro del componente para evitar ejecución a nivel de módulo en SSR
-  const restaurantIcon = L.divIcon({
-    className: '',
-    html: `<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
-      <div style="background:#14100D;border:1px solid #C49B6C;padding:5px 10px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.6);line-height:0">
-        <img src="/images/brand/logo-small.png" alt="Vaquero's" style="height:18px;width:auto;display:block" />
-      </div>
-      <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #C49B6C"></div>
-    </div>`,
-    iconSize:   [62, 36],
-    iconAnchor: [31, 36],
-  })
-
-  const customerIcon = L.divIcon({
-    className: '',
-    html: `<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
-      <div style="background:#6DB38A;color:#14100D;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.5)">Tu dirección</div>
-      <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #6DB38A"></div>
-    </div>`,
-    iconSize:   [90, 32],
-    iconAnchor: [45, 32],
-  })
-
-  const riderIcon = L.divIcon({
-    className: '',
-    html: `<div style="font-size:28px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6));transform:translateY(-8px)">🛵</div>`,
-    iconSize:   [32, 32],
-    iconAnchor: [16, 32],
-  })
-
-  return (
-    <MapContainer
-      center={center}
-      zoom={14}
-      scrollWheelZoom={false}
-      zoomControl={false}
-      style={{ width: '100%', height: '100%', background: '#161616' }}
-    >
-      <TileLayer
-        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
-      />
-      <MapPanner center={riderPos} />
-      <Marker position={[RESTAURANT.lat, RESTAURANT.lng]} icon={restaurantIcon}>
-        <Popup>Vaquero&apos;s</Popup>
-      </Marker>
-      <Marker position={[CUSTOMER.lat, CUSTOMER.lng]} icon={customerIcon}>
-        <Popup>Tu dirección</Popup>
-      </Marker>
-      <Marker position={riderPos} icon={riderIcon}>
-        <Popup>Repartidor en camino</Popup>
-      </Marker>
-    </MapContainer>
-  )
-}
-
-// ─── Componente público ───────────────────────────────────
-export function OrderMap() {
-  const [mounted, setMounted] = useState(false)
-
+  // Mover el marcador y seguirlo con la cámara
   useEffect(() => {
-    fixLeafletIcons()
-    setMounted(true)
-  }, [])
-
-  if (!mounted) {
-    return (
-      <div className="bg-surface border border-border rounded-xl overflow-hidden h-56 flex items-center justify-center">
-        <span className="text-muted text-xs">Cargando mapa...</span>
-      </div>
-    )
-  }
+    const pos = riderPosition(progress)
+    rider.current?.setLatLng(pos)
+    map.current?.panTo(pos, { animate: true, duration: 0.5 })
+  }, [progress])
 
   return (
     <div className="bg-surface border border-border rounded-xl overflow-hidden h-56">
-      <DeliveryMap />
+      <div ref={el} style={{ width: '100%', height: '100%', background: '#161616' }} />
     </div>
   )
 }

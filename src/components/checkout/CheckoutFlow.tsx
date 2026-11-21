@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/Button'
 import { useCart } from '@/context/CartContext'
 import ordersData from '@/data/orders.json'
 import { saveOrder } from '@/lib/orderHistory'
+import { getOrderRepository } from '@/lib/orders/repository'
 import { isStoreOpen, getStoreStatusText } from '@/lib/storeHours'
 import dynamic from 'next/dynamic'
 import { AddressAutocomplete } from '@/components/checkout/AddressAutocomplete'
@@ -21,6 +22,7 @@ import { Upsell } from '@/components/checkout/Upsell'
 import { ProductSheet } from '@/components/menu/ProductSheet'
 import type { Product } from '@/types/menu'
 import type { CartItem } from '@/types/cart'
+import type { Order } from '@/types/order'
 const CheckoutMap = dynamic(
   () => import('@/components/checkout/CheckoutMap').then(m => m.CheckoutMap),
   { ssr: false }
@@ -255,9 +257,9 @@ interface PaymentFormProps {
   total: number
   deliveryFee: number
   folio: string
-  deliveryMethod: string
-  itemCount: number
   onBack: () => void
+  /** Pago exitoso: el contenedor registra el pedido y navega a la confirmación */
+  onPaid: () => void
   /** Bloque "¿Te falta algo?" — se muestra antes del desglose */
   upsell?: React.ReactNode
   /** El total cambió y el cobro se está actualizando: no permitir pagar aún */
@@ -265,18 +267,14 @@ interface PaymentFormProps {
 }
 
 // ─── Step 4: Pago demo (sin Stripe) ──────────────────────
-function DemoPaymentForm({ total, deliveryFee, folio, deliveryMethod, itemCount, onBack, upsell, refreshing }: PaymentFormProps) {
-  const router = useRouter()
-  const { items, clearCart } = useCart()
+function DemoPaymentForm({ total, deliveryFee, onBack, onPaid, upsell, refreshing }: PaymentFormProps) {
   const [submitting, setSubmitting] = useState(false)
   const orderTotal = total + deliveryFee
 
   const handlePay = async () => {
     setSubmitting(true)
     await new Promise(r => setTimeout(r, 900))
-    saveOrder({ folio, timestamp: new Date().toISOString(), total: orderTotal, deliveryMethod, itemCount, deliveryFee, items: toSavedItems(items) })
-    clearCart()
-    router.push(`/order/${folio}?pagado=1`)
+    onPaid()
   }
 
   return (
@@ -340,11 +338,9 @@ function DemoPaymentForm({ total, deliveryFee, folio, deliveryMethod, itemCount,
 }
 
 // ─── Step 4: Pago (dentro de Elements) ───────────────────
-function PaymentForm({ total, deliveryFee, folio, deliveryMethod, itemCount, onBack, upsell, refreshing }: PaymentFormProps) {
+function PaymentForm({ total, deliveryFee, folio, onBack, onPaid, upsell, refreshing }: PaymentFormProps) {
   const stripe   = useStripe()
   const elements = useElements()
-  const router   = useRouter()
-  const { items, clearCart } = useCart()
 
   const [submitting, setSubmitting] = useState(false)
   const [stripeError, setStripeError] = useState<string | null>(null)
@@ -368,9 +364,7 @@ function PaymentForm({ total, deliveryFee, folio, deliveryMethod, itemCount, onB
       setStripeError(error.message ?? 'Error al procesar el pago')
       setSubmitting(false)
     } else {
-      saveOrder({ folio, timestamp: new Date().toISOString(), total: orderTotal, deliveryMethod, itemCount, deliveryFee, items: toSavedItems(items) })
-      clearCart()
-      router.push(`/order/${folio}?pagado=1`)
+      onPaid()
     }
   }
 
@@ -422,7 +416,7 @@ function PaymentForm({ total, deliveryFee, folio, deliveryMethod, itemCount, onB
 
 // ─── Main ─────────────────────────────────────────────────
 export function CheckoutFlow() {
-  const { items, total } = useCart()
+  const { items, total, clearCart } = useCart()
   const router = useRouter()
 
   const [step, setStep]               = useState<StepId>('review')
@@ -492,22 +486,21 @@ export function CheckoutFlow() {
       setStep('payment')
     } catch (err) {
       console.error(err)
-      setErrors({ name: 'Error al conectar con el servidor de pagos. Intenta de nuevo.' })
+      setErrors({ name: err instanceof Error && err.message ? err.message : 'Error al conectar con el servidor de pagos. Intenta de nuevo.' })
     } finally {
       setCreatingIntent(false)
     }
   }
 
   /** Crea el Payment Intent con el carrito y datos actuales */
-  async function requestIntent(intentFolio: string, amount: number): Promise<{ clientSecret: string; demo?: boolean }> {
+  async function requestIntent(intentFolio: string, expectedAmount: number): Promise<{ clientSecret: string; demo?: boolean }> {
+      // Solo se envía QUÉ se pidió; el servidor calcula el total con el menú
       const res = await fetch('/api/checkout/payment-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount,
           folio:  intentFolio,
           deliveryMethod,
-          deliveryFee: selectedMethod.price,
           customer: {
             name:        form.name,
             phone:       form.phone,
@@ -516,24 +509,25 @@ export function CheckoutFlow() {
             notes:       form.notes       || undefined,
           },
           items: items.map(i => ({
-            name:          i.name,
-            quantity:      i.quantity,
-            unitPrice:     i.unitPrice,
-            variantExtra:  i.variantExtra,
-            variantLabels: i.variantLabels,
-            subtotal:      i.subtotal,
+            productId:        i.productId,
+            quantity:         i.quantity,
+            selectedVariants: i.selectedVariants,
           })),
         }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
+      if (!res.ok) throw new Error(data.error ?? 'No se pudo preparar el pago')
+      // Nunca cobrar un monto distinto al que el cliente está viendo
+      if (data.amount !== expectedAmount) {
+        throw new Error('Los precios de tu pedido cambiaron. Revisa el resumen e intenta de nuevo.')
+      }
       return data
   }
 
   // Si el total cambia en el paso de pago (p. ej. "¿Te falta algo?"), el Payment
   // Intent de Stripe quedó con el monto anterior: se crea uno nuevo con el total
   // actual y se bloquea el botón de pago mientras tanto.
-  const intentStale = step === 'payment' && !isDemoMode && intentAmount !== null && intentAmount !== orderTotal
+  const intentStale = step === 'payment' && !isDemoMode && intentAmount !== null && items.length > 0 && intentAmount !== orderTotal
   useEffect(() => {
     if (!intentStale) return
     let cancelled = false
@@ -553,6 +547,44 @@ export function CheckoutFlow() {
   }, [intentStale, orderTotal, folio])
 
   const upsell = <Upsell onOpenProduct={setSheetProduct} />
+
+  /** Pago confirmado: registra el pedido (le llega al panel), lo guarda en el dispositivo y navega */
+  const completeOrder = () => {
+    const now = new Date().toISOString()
+    const order: Order = {
+      id: folio,
+      createdAt: now,
+      updatedAt: now,
+      status: 'pending',
+      deliveryMethod,
+      customer: {
+        name:        form.name.trim(),
+        phone:       form.phone.trim(),
+        address:     deliveryMethod === 'delivery' ? form.address.trim() : undefined,
+        tableNumber: deliveryMethod === 'table' ? form.tableNumber.trim() : undefined,
+        notes:       form.notes.trim(),
+      },
+      items: items.map(i => ({
+        productId: i.productId,
+        name:      i.name,
+        quantity:  i.quantity,
+        unitPrice: i.unitPrice + i.variantExtra,
+        variants:  i.variantLabels,
+        subtotal:  i.subtotal,
+      })),
+      subtotal:    total,
+      deliveryFee: selectedMethod.price,
+      total:       orderTotal,
+    }
+    getOrderRepository().create(order)
+    saveOrder({
+      folio, timestamp: now, total: orderTotal, deliveryMethod,
+      itemCount: items.reduce((n, i) => n + i.quantity, 0),
+      deliveryFee: selectedMethod.price, items: toSavedItems(items),
+    })
+    clearCart()
+    router.push(`/order/${folio}?pagado=1`)
+  }
 
   if (items.length === 0 && step !== 'payment') {
     return (
@@ -600,9 +632,8 @@ export function CheckoutFlow() {
               total={total}
               deliveryFee={selectedMethod.price}
               folio={folio}
-              deliveryMethod={deliveryMethod}
-              itemCount={items.reduce((s, i) => s + i.quantity, 0)}
               onBack={() => setStep('customer')}
+              onPaid={completeOrder}
               upsell={upsell}
             />
           ) : (
@@ -615,9 +646,8 @@ export function CheckoutFlow() {
                 total={total}
                 deliveryFee={selectedMethod.price}
                 folio={folio}
-                deliveryMethod={deliveryMethod}
-                itemCount={items.reduce((s, i) => s + i.quantity, 0)}
                 onBack={() => setStep('customer')}
+                onPaid={completeOrder}
                 upsell={upsell}
                 refreshing={intentStale}
               />

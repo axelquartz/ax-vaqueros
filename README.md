@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vaquero's — Pedidos y menú digital
 
-## Getting Started
+Producto 1 de Boutique AX. Next.js 16 (App Router, `cacheComponents`), Tailwind v4 y TypeScript. Mobile-first, tema oscuro.
 
-First, run the development server:
+## Desarrollo
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # http://localhost:3000
+npm test           # pruebas (Vitest)
+npx next build     # verificar build de producción
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Rutas
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Ruta | Qué es |
+|---|---|
+| `/` | Menú y carrito |
+| `/checkout` | Pedido en 4 pasos: resumen → entrega → datos → pago (Stripe) |
+| `/order/[folio]` | Confirmación y estatus del pedido en vivo |
+| `/pedidos` | Pedidos hechos desde este dispositivo |
+| `/nosotros` | Historia, horario y mapa |
+| `/admin` | Panel del restaurante: gestión de pedidos y dashboard de desempeño (requiere contraseña) |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Variables de entorno
 
-## Learn More
+En `.env.local` para desarrollo y en Netlify (Site configuration → Environment variables) para producción.
 
-To learn more about Next.js, take a look at the following resources:
+| Variable | Para qué |
+|---|---|
+| `STRIPE_SECRET_KEY` | Crear cobros en el servidor. Sin ella, el checkout funciona en modo demo (sin cobro). |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Formulario de pago de Stripe en el navegador. |
+| `STRIPE_WEBHOOK_SECRET` | Verificar la firma de los avisos de Stripe en `/api/webhooks/stripe`. |
+| `ADMIN_PASSWORD` | Contraseña del panel `/admin`. **En producción, sin ella el panel queda cerrado.** En desarrollo, si no existe, el panel se abre con un aviso. |
+| `ADMIN_SESSION_SECRET` | Opcional. Refuerza la firma de la sesión del panel. Cambiarla (o cambiar la contraseña) cierra todas las sesiones. |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Reglas del negocio en el servidor
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Precios:** el servidor recalcula el total con el menú (`src/lib/pricing.ts`); nunca confía en montos del navegador.
+- **Horario:** fuera del horario de `src/data/hours.json` la API de pago rechaza el pedido (409).
 
-## Deploy on Vercel
+## Datos (estado actual: demo sin base de datos)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Menú, horario y configuración: JSON en `src/data/`.
+- Pedidos: `src/lib/orders/repository.ts`. Hoy se guardan en el navegador (localStorage) y se sincronizan entre pestañas; **no** viajan entre dispositivos.
+- El dashboard usa un año de historial de ejemplo generado en memoria (`src/lib/orders/history.ts`), que se elimina al conectar pedidos reales.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Siguiente paso: Supabase
+
+1. Crear una implementación de `OrderRepository` sobre Supabase (+ Realtime) y usarla en `getOrderRepository()`; los componentes no cambian.
+2. Guardar el pedido en el servidor al confirmar el pago (webhook de Stripe en `/api/webhooks/stripe`), no desde el navegador.
+3. Reemplazar la contraseña única de `/admin` por usuarios de Supabase Auth.
+4. Quitar el historial de ejemplo.
