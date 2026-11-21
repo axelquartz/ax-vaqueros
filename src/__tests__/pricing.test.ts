@@ -2,6 +2,14 @@
 import { NextRequest } from 'next/server'
 import { priceLine, priceOrder, PricingError, MAX_QUANTITY_PER_LINE } from '@/lib/pricing'
 import { POST } from '@/app/api/checkout/payment-intent/route'
+
+// Horario controlado: las pruebas no dependen de la hora a la que corren
+const { store } = vi.hoisted(() => ({ store: { open: true } }))
+vi.mock('@/lib/storeHours', () => ({
+  isStoreOpen: () => store.open,
+  getStoreStatusText: () => (store.open ? 'Abierto hasta las 22:00' : 'Cerrado. Abre hoy a las 12:00'),
+}))
+beforeEach(() => { store.open = true })
 import menu from '@/data/menu.json'
 import orders from '@/data/orders.json'
 
@@ -108,5 +116,12 @@ describe('POST /api/checkout/payment-intent', () => {
   it('400 con JSON inválido', async () => {
     const res = await POST(new NextRequest('http://localhost/x', { method: 'POST', body: '{nope' }))
     expect(res.status).toBe(400)
+  })
+
+  it('409 fuera de horario, aunque el pedido sea válido', async () => {
+    store.open = false
+    const res = await call(valid)
+    expect(res.status).toBe(409)
+    expect((await res.json()).error).toBe('Cerrado. Abre hoy a las 12:00. Por ahora no estamos recibiendo pedidos.')
   })
 })

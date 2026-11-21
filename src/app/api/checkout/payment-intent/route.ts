@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { priceOrder, PricingError, type OrderLineInput } from '@/lib/pricing'
+import { getStoreStatusText, isStoreOpen } from '@/lib/storeHours'
 
 const PLACEHOLDER = 'REEMPLAZA_CON_TU_CLAVE'
 const isDemoMode  = !process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes(PLACEHOLDER)
@@ -43,6 +44,14 @@ export async function POST(req: NextRequest) {
     body = await req.json()
   } catch {
     return badRequest('Solicitud inválida')
+  }
+
+  // El checkout ya bloquea pedidos fuera de horario, pero el servidor es quien manda
+  if (!isStoreOpen()) {
+    return NextResponse.json(
+      { error: `${getStoreStatusText()}. Por ahora no estamos recibiendo pedidos.` },
+      { status: 409 },
+    )
   }
 
   const { folio, customer, items, deliveryMethod } = body ?? {}
