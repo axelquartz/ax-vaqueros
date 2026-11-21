@@ -1,132 +1,225 @@
 'use client'
 
-import { useState } from 'react'
-import { Badge } from '@/components/ui/Badge'
-import { Button } from '@/components/ui/Button'
-import ordersData from '@/data/orders.json'
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { useOrders } from '@/hooks/useOrders'
+import { getOrderRepository } from '@/lib/orders/repository'
+import { ACTIVE_STATUSES, statusLabel, type OrderStatusId } from '@/lib/orders/status'
+import { OrderCard } from './OrderCard'
 import type { Order } from '@/types/order'
-import type { BadgeColor } from '@/components/ui/Badge'
 
-const STATUS_FLOW: Record<string, string> = {
-  pending:   'confirmed',
-  confirmed: 'preparing',
-  preparing: 'ready',
-  ready:     'delivered',
-}
+type Tab = 'active' | 'delivered' | 'cancelled'
 
-const FILTERS = [
-  { id: 'all',       label: 'Todos' },
-  { id: 'pending',   label: 'Nuevos' },
-  { id: 'confirmed', label: 'Confirmados' },
-  { id: 'preparing', label: 'En preparación' },
-  { id: 'ready',     label: 'Listos' },
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'active',    label: 'Activos' },
   { id: 'delivered', label: 'Entregados' },
+  { id: 'cancelled', label: 'Cancelados' },
 ]
 
-export function MerchantPanel() {
-  const [orders, setOrders] = useState<Order[]>(ordersData.orders as Order[])
-  const [activeFilter, setActiveFilter] = useState('all')
+const COLUMN_TITLE: Partial<Record<OrderStatusId, string>> = {
+  pending:   'Nuevos',
+  confirmed: 'Confirmados',
+  preparing: 'Preparando',
+  ready:     'Listos',
+}
 
-  const advanceStatus = (orderId: string) => {
-    setOrders(prev =>
-      prev.map(o => {
-        if (o.id !== orderId) return o
-        const next = STATUS_FLOW[o.status]
-        return next ? { ...o, status: next, updatedAt: new Date().toISOString() } : o
-      })
-    )
+const byOldest = (a: Order, b: Order) => a.createdAt.localeCompare(b.createdAt)
+const byNewest = (a: Order, b: Order) => b.updatedAt.localeCompare(a.updatedAt)
+
+/**
+ * Reloj compartido que avanza cada 30 s para refrescar "Hace N min".
+ * Store externo (no Date.now() en render): en el servidor vale 0 y el
+ * panel no se prerenderiza con una hora congelada.
+ */
+let clockNow = 0
+const clockListeners = new Set<() => void>()
+let clockTimer: ReturnType<typeof setInterval> | undefined
+function subscribeClock(cb: () => void) {
+  clockListeners.add(cb)
+  if (!clockTimer) {
+    // Al (re)montar el panel, la hora se actualiza de inmediato: React re-lee
+    // el snapshot tras suscribirse y re-renderiza si cambió
+    clockNow = Date.now()
+    clockTimer = setInterval(() => { clockNow = Date.now(); clockListeners.forEach(l => l()) }, 30_000)
+  }
+  return () => {
+    clockListeners.delete(cb)
+    if (clockListeners.size === 0) { clearInterval(clockTimer); clockTimer = undefined }
+  }
+}
+const getClock = () => (clockNow ||= Date.now())
+const getServerClock = () => 0
+
+function useNow(): number {
+  return useSyncExternalStore(subscribeClock, getClock, getServerClock)
+}
+
+/** Campanita de dos tonos con Web Audio (sin archivos) */
+function playChime(ctx: AudioContext) {
+  const t = ctx.currentTime
+  ;[880, 1320].forEach((freq, i) => {
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.frequency.value = freq
+    osc.type = 'sine'
+    gain.gain.setValueAtTime(0.0001, t + i * 0.18)
+    gain.gain.exponentialRampToValueAtTime(0.25, t + i * 0.18 + 0.02)
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.18 + 0.35)
+    osc.connect(gain).connect(ctx.destination)
+    osc.start(t + i * 0.18)
+    osc.stop(t + i * 0.18 + 0.4)
+  })
+}
+
+export function MerchantPanel() {
+  const orders = useOrders()
+  const now = useNow()
+  const [tab, setTab] = useState<Tab>('active')
+  const [error, setError] = useState<string | null>(null)
+
+  // ── Pedidos nuevos: resaltado + sonido opcional
+  const seen = useRef<Set<string> | null>(null)
+  const [newIds, setNewIds] = useState<Set<string>>(() => new Set())
+  const [soundOn, setSoundOn] = useState(false)
+  const audio = useRef<AudioContext | null>(null)
+
+  useEffect(() => {
+    if (orders.length === 0) return
+    if (seen.current === null) {           // primera carga: nada es "nuevo"
+      seen.current = new Set(orders.map(o => o.id))
+      return
+    }
+    const arrived = orders.filter(o => !seen.current!.has(o.id))
+    if (arrived.length === 0) return
+    arrived.forEach(o => seen.current!.add(o.id))
+    setNewIds(prev => new Set([...prev, ...arrived.map(o => o.id)]))
+    if (soundOn && audio.current) playChime(audio.current)
+  }, [orders, soundOn])
+
+  const toggleSound = async () => {
+    const next = !soundOn
+    if (next) {
+      // El navegador solo permite audio tras un gesto del usuario: se crea aquí
+      audio.current ??= new AudioContext()
+      await audio.current.resume()
+      playChime(audio.current)
+    }
+    // Sin persistir: el navegador exige un toque por carga para reproducir audio
+    setSoundOn(next)
   }
 
-  const filtered = activeFilter === 'all'
-    ? orders
-    : orders.filter(o => o.status === activeFilter)
+  // ── Datos derivados
+  const active    = useMemo(() => orders.filter(o => ACTIVE_STATUSES.includes(o.status as OrderStatusId)).sort(byOldest), [orders])
+  const delivered = useMemo(() => orders.filter(o => o.status === 'delivered').sort(byNewest), [orders])
+  const cancelled = useMemo(() => orders.filter(o => o.status === 'cancelled').sort(byNewest), [orders])
+  const pendingCount = active.filter(o => o.status === 'pending').length
+  const counts: Record<Tab, number> = { active: active.length, delivered: delivered.length, cancelled: cancelled.length }
 
-  const pendingCount = orders.filter(o => o.status === 'pending').length
+  // Pestaña del navegador: "(2) Pedidos" cuando hay nuevos sin confirmar
+  useEffect(() => {
+    document.title = `${pendingCount > 0 ? `(${pendingCount}) ` : ''}Pedidos — Vaquero's`
+  }, [pendingCount])
+
+  // ── Acciones
+  const act = (fn: () => void) => {
+    try { fn(); setError(null) } catch (e) { setError(e instanceof Error ? e.message : 'No se pudo actualizar el pedido') }
+  }
+  const advance = (id: string, to: OrderStatusId) => act(() => {
+    getOrderRepository().updateStatus(id, to)
+    setNewIds(prev => { const n = new Set(prev); n.delete(id); return n })
+  })
+  const cancel = (id: string) => act(() => { getOrderRepository().updateStatus(id, 'cancelled') })
+
+  const card = (o: Order) => (
+    <OrderCard key={o.id} order={o} now={now} isNew={newIds.has(o.id)} onAdvance={advance} onCancel={cancel} />
+  )
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
+    <div className="max-w-6xl mx-auto px-4 py-6 space-y-5">
 
       {/* Encabezado */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-foreground font-semibold text-lg">Pedidos</h1>
-        {pendingCount > 0 && (
-          <Badge color="warning">
-            {pendingCount} nuevo{pendingCount > 1 ? 's' : ''}
-          </Badge>
-        )}
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <h1 className="font-display text-[1.625rem] font-bold leading-none text-foreground">Pedidos</h1>
+          <p className="text-muted text-sm mt-1.5" aria-live="polite">
+            {pendingCount > 0
+              ? `${pendingCount} ${pendingCount === 1 ? 'pedido nuevo' : 'pedidos nuevos'} por confirmar`
+              : 'Sin pedidos nuevos'}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={toggleSound}
+          aria-pressed={soundOn}
+          className={[
+            'shrink-0 min-h-10 px-4 rounded-full text-sm font-medium border transition-colors',
+            soundOn ? 'bg-brand/10 border-brand/40 text-brand' : 'bg-surface border-border text-secondary hover:border-border-strong',
+          ].join(' ')}
+        >
+          {soundOn ? 'Sonido activado' : 'Activar sonido'}
+        </button>
       </div>
 
-      {/* Filtros */}
-      <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-        {FILTERS.map(f => (
+      {/* Pestañas */}
+      <div role="tablist" aria-label="Estado de los pedidos" className="flex gap-1 p-1 bg-surface border border-border rounded-full w-fit max-w-full overflow-x-auto no-scrollbar">
+        {TABS.map(t => (
           <button
-            key={f.id}
-            onClick={() => setActiveFilter(f.id)}
+            key={t.id}
+            role="tab"
+            aria-selected={tab === t.id}
+            onClick={() => setTab(t.id)}
             className={[
-              'shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
-              activeFilter === f.id
-                ? 'bg-brand text-inverse border-brand'
-                : 'bg-surface border-border text-secondary hover:border-border-strong',
+              'shrink-0 min-h-10 px-4 rounded-full text-sm font-medium transition-colors',
+              tab === t.id ? 'bg-elevated text-foreground' : 'text-muted hover:text-foreground',
             ].join(' ')}
           >
-            {f.label}
+            {t.label} <span className="tabular text-muted">{counts[t.id]}</span>
           </button>
         ))}
       </div>
 
-      {/* Tarjetas de pedidos */}
-      <div className="space-y-3">
-        {filtered.length === 0 && (
-          <p className="text-muted text-sm text-center py-10">Sin pedidos en esta categoría</p>
-        )}
+      {error && (
+        <p role="alert" className="text-error text-sm bg-error/10 border border-error/25 rounded-lg px-3 py-2">{error}</p>
+      )}
 
-        {filtered.map(order => {
-          const statusConfig  = ordersData.statuses.find(s => s.id === order.status)
-          const deliveryMethod = ordersData.deliveryMethods.find(m => m.id === order.deliveryMethod)
-          const nextStatusId  = STATUS_FLOW[order.status]
-          const nextLabel     = ordersData.statuses.find(s => s.id === nextStatusId)?.label
+      {/* Activos: columnas por estatus (apiladas en móvil) */}
+      {tab === 'active' && (
+        active.length === 0 ? (
+          <p className="text-muted text-sm py-16 text-center">No hay pedidos activos. Los nuevos aparecerán aquí.</p>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4 items-start">
+            {ACTIVE_STATUSES.map(status => {
+              const column = active.filter(o => o.status === status)
+              return (
+                <section key={status} aria-label={COLUMN_TITLE[status]} className="space-y-3">
+                  <h2 className="flex items-baseline justify-between text-sm font-semibold text-secondary">
+                    {COLUMN_TITLE[status]}
+                    <span className="tabular text-muted font-normal">{column.length}</span>
+                  </h2>
+                  {column.length === 0
+                    ? <p className="text-muted text-xs border border-dashed border-border rounded-2xl px-4 py-6 text-center">Sin pedidos</p>
+                    : column.map(card)}
+                </section>
+              )
+            })}
+          </div>
+        )
+      )}
 
-          return (
-            <div key={order.id} className="bg-surface border border-border rounded-xl overflow-hidden">
+      {/* Historial */}
+      {tab !== 'active' && (() => {
+        const list = tab === 'delivered' ? delivered : cancelled
+        return list.length === 0 ? (
+          <p className="text-muted text-sm py-16 text-center">
+            {tab === 'delivered' ? 'Aún no hay pedidos entregados.' : 'No hay pedidos cancelados.'}
+          </p>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 items-start">{list.map(card)}</div>
+        )
+      })()}
 
-              {/* Header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                <div className="flex items-center gap-3">
-                  <span className="font-display text-lg font-bold leading-none text-foreground tabular">{order.id}</span>
-                  <span className="text-muted text-xs">{deliveryMethod?.label}</span>
-                </div>
-                {statusConfig && (
-                  <Badge color={statusConfig.color as BadgeColor}>{statusConfig.label}</Badge>
-                )}
-              </div>
-
-              {/* Cliente + items */}
-              <div className="px-4 py-3 space-y-1.5">
-                <p className="text-secondary text-xs font-medium">{order.customer.name}</p>
-                {order.items.map((item, i) => (
-                  <div key={i} className="flex justify-between text-xs">
-                    <span className="text-muted">{item.quantity}× {item.name}</span>
-                    <span className="text-muted">${item.subtotal}</span>
-                  </div>
-                ))}
-                {order.customer.notes && (
-                  <p className="text-warning text-xs italic pt-1">"{order.customer.notes}"</p>
-                )}
-              </div>
-
-              {/* Footer */}
-              <div className="flex items-center justify-between px-4 py-3 border-t border-border">
-                <span className="text-foreground font-semibold text-sm">${order.total}</span>
-                {nextLabel && (
-                  <Button onClick={() => advanceStatus(order.id)}>
-                    Marcar como {nextLabel}
-                  </Button>
-                )}
-              </div>
-            </div>
-          )
-        })}
-      </div>
+      <p className="sr-only" aria-live="assertive">
+        {newIds.size > 0 ? `Llegó un pedido nuevo. ${statusLabel('pending')}.` : ''}
+      </p>
     </div>
   )
 }

@@ -7,6 +7,7 @@ import { CartProvider, useCart } from '@/context/CartContext'
 import { ProductSheet } from '@/components/menu/ProductSheet'
 import { ProductCard } from '@/components/menu/ProductCard'
 import menu from '@/data/menu.json'
+import { priceLine } from '@/lib/pricing'
 import type { Product } from '@/types/menu'
 
 const { push } = vi.hoisted(() => ({ push: vi.fn() }))
@@ -159,6 +160,36 @@ describe('ProductSheet', () => {
     const cssMs = Number(css.match(/--animate-sheet-out:\s*sheet-out\s+(\d+)ms/)![1])
     const tsMs  = Number(src.match(/const EXIT_MS = (\d+)/)![1])
     expect(tsMs).toBe(cssMs)
+  })
+})
+
+describe('Precio del cliente = precio del servidor', () => {
+  const groups = menu.variants as Record<string, { required: boolean; multi?: boolean; options: { id: string; label: string }[] }>
+
+  it.each(menu.products.filter(p => p.available).map(p => [p.id]))('%s', async id => {
+    const product = byId(id)
+    let added: { subtotal: number; quantity: number; selectedVariants: Record<string, string> } | undefined
+    function Spy() {
+      const { items } = useCart()
+      added = items[0]
+      return null
+    }
+    render(<CartProvider><ProductSheet product={product} onClose={vi.fn()} /><Spy /></CartProvider>)
+
+    // requeridas + la última opción de cada grupo multi, y cantidad 2
+    for (const gid of product.variantGroups) {
+      const g = groups[gid]
+      const picks = g.required ? [g.options[0]] : g.multi ? [g.options[g.options.length - 1]] : []
+      for (const o of picks) {
+        const label = o.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        await userEvent.click(screen.getByRole('button', { name: new RegExp(`^${label}`) }))
+      }
+    }
+    await userEvent.click(screen.getByRole('button', { name: '+' }))
+    await userEvent.click(addButton())
+
+    const server = priceLine({ productId: id, quantity: added!.quantity, selectedVariants: added!.selectedVariants })
+    expect(added!.subtotal).toBe(server.subtotal)
   })
 })
 

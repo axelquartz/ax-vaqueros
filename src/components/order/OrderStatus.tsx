@@ -9,6 +9,7 @@ import { StatusTracker } from './StatusTracker'
 import { FolioActions } from './FolioActions'
 import { PaymentSuccess } from './PaymentSuccess'
 import { findOrder } from '@/lib/orderHistory'
+import { useOrder } from '@/hooks/useOrders'
 import ordersData from '@/data/orders.json'
 import type { Order } from '@/types/order'
 import type { BadgeColor } from '@/components/ui/Badge'
@@ -50,7 +51,10 @@ function useHydratedOrder(order: Order): Order {
 
 export function OrderStatus({ order: baseOrder, justPaid = false }: OrderStatusProps) {
   const router = useRouter()
-  const order  = useHydratedOrder(baseOrder)
+  const fromHistory = useHydratedOrder(baseOrder)
+  // En vivo: refleja los cambios de estatus que haga el restaurante
+  const live  = useOrder(baseOrder.id)
+  const order = live ?? fromHistory
 
   // Quita ?pagado=1 para que recargar la página no repita la animación
   useEffect(() => {
