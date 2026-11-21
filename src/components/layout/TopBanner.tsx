@@ -9,7 +9,9 @@ export function TopBanner() {
     <img
       src={bannerData.image}
       alt={bannerData.alt}
-      className="w-full object-cover block"
+      width={1600}
+      height={400}
+      className="w-full aspect-[4/1] object-cover block"
     />
   )
 
