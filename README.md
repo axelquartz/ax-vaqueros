@@ -24,7 +24,9 @@ npx next build     # verificar build de producción
 
 ## Variables de entorno
 
-En `.env.local` para desarrollo y en Netlify (Site configuration → Environment variables) para producción.
+En `.env.local` para desarrollo y en Netlify (Project configuration → Environment variables) para producción.
+
+> **Importante:** en Netlify el servidor recibe las variables al publicar. Después de crear o cambiar una variable hay que volver a publicar (Deploys → Trigger deploy → Deploy site); si no, el sitio sigue con los valores anteriores.
 
 | Variable | Para qué |
 |---|---|
