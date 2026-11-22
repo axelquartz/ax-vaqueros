@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useNow } from '@/hooks/useNow'
 import { useOrders } from '@/hooks/useOrders'
-import { getOrderRepository } from '@/lib/orders/repository'
+import { clearRepositoryError, getOrderRepository, getRepositoryError, subscribeRepositoryError } from '@/lib/orders/repository'
 import { ACTIVE_STATUSES, statusLabel, type OrderStatusId } from '@/lib/orders/status'
 import { OrderCard } from './OrderCard'
 import type { Order } from '@/types/order'
@@ -110,6 +110,7 @@ export function MerchantPanel() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-5">
+      <SyncError />
 
       {/* Encabezado */}
       <div className="flex items-end justify-between gap-4">
@@ -195,6 +196,20 @@ export function MerchantPanel() {
       <p className="sr-only" aria-live="assertive">
         {newIds.size > 0 ? `Llegó un pedido nuevo. ${statusLabel('pending')}.` : ''}
       </p>
+    </div>
+  )
+}
+
+/** Aviso cuando falla la conexión con la base de datos (el cambio ya se revirtió) */
+function SyncError() {
+  const message = useSyncExternalStore(subscribeRepositoryError, getRepositoryError, () => null)
+  if (!message) return null
+  return (
+    <div role="alert" className="flex items-center justify-between gap-3 rounded-xl border border-error/40 bg-error/10 px-4 py-3">
+      <p className="text-error text-sm">{message}</p>
+      <button type="button" onClick={clearRepositoryError} className="min-h-10 px-2 text-sm text-muted hover:text-foreground">
+        Cerrar
+      </button>
     </div>
   )
 }

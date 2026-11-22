@@ -13,7 +13,8 @@ import { Input, Textarea } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { useCart } from '@/context/CartContext'
 import ordersData from '@/data/orders.json'
-import { saveOrder } from '@/lib/orderHistory'
+import { rememberOrderToken, saveOrder } from '@/lib/orderHistory'
+import { ORDER_TOKEN_HEADER, type CustomerOrderResponse } from '@/lib/orders/customerApi'
 import { getOrderRepository } from '@/lib/orders/repository'
 import { isStoreOpen, getStoreStatusText } from '@/lib/storeHours'
 import dynamic from 'next/dynamic'
@@ -259,7 +260,7 @@ interface PaymentFormProps {
   folio: string
   onBack: () => void
   /** Pago exitoso: el contenedor registra el pedido y navega a la confirmación */
-  onPaid: () => void
+  onPaid: () => void | Promise<void>
   /** Bloque "¿Te falta algo?" — se muestra antes del desglose */
   upsell?: React.ReactNode
   /** El total cambió y el cobro se está actualizando: no permitir pagar aún */
@@ -414,6 +415,13 @@ function PaymentForm({ total, deliveryFee, folio, onBack, onPaid, upsell, refres
   )
 }
 
+interface IntentResult {
+  clientSecret: string
+  folio: string
+  accessToken?: string
+  demo?: boolean
+}
+
 // ─── Main ─────────────────────────────────────────────────
 export function CheckoutFlow() {
   const { items, total, clearCart } = useCart()
@@ -427,6 +435,8 @@ export function CheckoutFlow() {
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [isDemoMode, setIsDemoMode]   = useState(false)
   const [folio, setFolio]             = useState<string>('')
+  /** Llave privada del pedido guardado en el servidor (solo con Supabase) */
+  const [accessToken, setAccessToken] = useState<string | undefined>()
   const [creatingIntent, setCreatingIntent] = useState(false)
   const [intentAmount, setIntentAmount] = useState<number | null>(null)
   const [sheetProduct, setSheetProduct] = useState<Product | null>(null)
@@ -475,11 +485,11 @@ export function CheckoutFlow() {
 
     setCreatingIntent(true)
     try {
-      const newFolio = `ORD-${String(Math.floor(Math.random() * 9000) + 1000)}`
       const amount = orderTotal
-      const data = await requestIntent(newFolio, amount)
+      // Volver al paso de datos y regresar reutiliza el mismo pedido
+      const data = await requestIntent(accessToken ? { folio, accessToken } : undefined, amount)
 
-      setFolio(newFolio)
+      applyIntent(data)
       setClientSecret(data.clientSecret)
       setIsDemoMode(!!data.demo)
       setIntentAmount(amount)
@@ -492,14 +502,21 @@ export function CheckoutFlow() {
     }
   }
 
-  /** Crea el Payment Intent con el carrito y datos actuales */
-  async function requestIntent(intentFolio: string, expectedAmount: number): Promise<{ clientSecret: string; demo?: boolean }> {
+  /** El servidor asigna el folio; la llave se guarda antes de pagar (por si Stripe redirige) */
+  function applyIntent(data: IntentResult) {
+    setFolio(data.folio)
+    setAccessToken(data.accessToken)
+    if (data.accessToken) rememberOrderToken(data.folio, data.accessToken)
+  }
+
+  /** Crea (o actualiza) el pedido y el Payment Intent con el carrito y datos actuales */
+  async function requestIntent(draft: { folio: string; accessToken: string } | undefined, expectedAmount: number): Promise<IntentResult> {
       // Solo se envía QUÉ se pidió; el servidor calcula el total con el menú
       const res = await fetch('/api/checkout/payment-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          folio:  intentFolio,
+          draft,
           deliveryMethod,
           customer: {
             name:        form.name,
@@ -527,15 +544,17 @@ export function CheckoutFlow() {
   // Si el total cambia en el paso de pago (p. ej. "¿Te falta algo?"), el Payment
   // Intent de Stripe quedó con el monto anterior: se crea uno nuevo con el total
   // actual y se bloquea el botón de pago mientras tanto.
-  const intentStale = step === 'payment' && !isDemoMode && intentAmount !== null && items.length > 0 && intentAmount !== orderTotal
+  // (En demo sin Stripe también: con Supabase el pedido guardado debe tener el total nuevo.)
+  const intentStale = step === 'payment' && (!isDemoMode || !!accessToken) && intentAmount !== null && items.length > 0 && intentAmount !== orderTotal
   useEffect(() => {
     if (!intentStale) return
     let cancelled = false
     const amount = orderTotal
     const t = setTimeout(() => {
-      requestIntent(folio, amount)
+      requestIntent(accessToken ? { folio, accessToken } : undefined, amount)
         .then(data => {
           if (cancelled) return
+          applyIntent(data)
           setClientSecret(data.clientSecret)
           setIntentAmount(amount)
         })
@@ -544,14 +563,14 @@ export function CheckoutFlow() {
     return () => { cancelled = true; clearTimeout(t) }
     // requestIntent lee el carrito/form actuales; basta con reaccionar al total
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [intentStale, orderTotal, folio])
+  }, [intentStale, orderTotal, folio, accessToken])
 
   const upsell = <Upsell onOpenProduct={setSheetProduct} />
 
   /** Pago confirmado: registra el pedido (le llega al panel), lo guarda en el dispositivo y navega */
-  const completeOrder = () => {
+  const completeOrder = async () => {
     const now = new Date().toISOString()
-    const order: Order = {
+    let order: Order = {
       id: folio,
       createdAt: now,
       updatedAt: now,
@@ -576,11 +595,29 @@ export function CheckoutFlow() {
       deliveryFee: selectedMethod.price,
       total:       orderTotal,
     }
-    getOrderRepository().create(order)
+
+    if (accessToken) {
+      // Con Supabase el pedido ya está guardado: el servidor confirma el pago
+      // (con Stripe, o directo en modo demo). Si no responde, la pantalla de
+      // estatus lo vuelve a intentar sola.
+      try {
+        const res = await fetch(`/api/orders/${encodeURIComponent(folio)}`, {
+          method: 'POST',
+          headers: { [ORDER_TOKEN_HEADER]: accessToken },
+        })
+        if (res.ok) order = ((await res.json()) as CustomerOrderResponse).order
+      } catch (err) {
+        console.error('No se pudo confirmar el pedido; la pantalla de estatus reintentará', err)
+      }
+    } else {
+      getOrderRepository().create(order)
+    }
+
     saveOrder({
-      folio, timestamp: now, total: orderTotal, deliveryMethod,
-      itemCount: items.reduce((n, i) => n + i.quantity, 0),
-      deliveryFee: selectedMethod.price, items: toSavedItems(items),
+      folio, timestamp: order.createdAt, total: order.total, deliveryMethod,
+      itemCount: order.items.reduce((n, i) => n + i.quantity, 0),
+      deliveryFee: order.deliveryFee, items: toSavedItems(items),
+      accessToken,
     })
     clearCart()
     router.push(`/order/${folio}?pagado=1`)
@@ -635,6 +672,7 @@ export function CheckoutFlow() {
               onBack={() => setStep('customer')}
               onPaid={completeOrder}
               upsell={upsell}
+              refreshing={intentStale}
             />
           ) : (
             <Elements

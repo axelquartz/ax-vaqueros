@@ -15,7 +15,6 @@ export default function AdminLoginPage() {
           </div>
         </div>
 
-        {/* La página es estática: si falta ADMIN_PASSWORD lo avisa la acción al enviar (en runtime) */}
         <div className="bg-surface border border-border rounded-2xl p-5">
           <LoginForm />
         </div>

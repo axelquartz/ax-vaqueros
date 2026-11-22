@@ -10,6 +10,8 @@ import { FolioActions } from './FolioActions'
 import { PaymentSuccess } from './PaymentSuccess'
 import { findOrder } from '@/lib/orderHistory'
 import { useOrder } from '@/hooks/useOrders'
+import { useCustomerOrder } from '@/hooks/useCustomerOrder'
+import { isSupabaseConfigured } from '@/lib/supabase/config'
 import ordersData from '@/data/orders.json'
 import type { Order } from '@/types/order'
 import type { BadgeColor } from '@/components/ui/Badge'
@@ -52,9 +54,13 @@ function useHydratedOrder(order: Order): Order {
 export function OrderStatus({ order: baseOrder, justPaid = false }: OrderStatusProps) {
   const router = useRouter()
   const fromHistory = useHydratedOrder(baseOrder)
-  // En vivo: refleja los cambios de estatus que haga el restaurante
-  const live  = useOrder(baseOrder.id)
-  const order = live ?? fromHistory
+  // En vivo: refleja los cambios de estatus que haga el restaurante.
+  // Con Supabase se consulta al servidor; en la demo, al repositorio local.
+  const online = isSupabaseConfigured()
+  const remote = useCustomerOrder(baseOrder.id, online)
+  const local  = useOrder(baseOrder.id, { enabled: !online })
+  const remoteOrder = remote.state === 'paid' || remote.state === 'unpaid' ? remote.order : undefined
+  const order = remoteOrder ?? local ?? fromHistory
 
   // Quita ?pagado=1 para que recargar la página no repita la animación
   useEffect(() => {
@@ -93,6 +99,12 @@ export function OrderStatus({ order: baseOrder, justPaid = false }: OrderStatusP
           <p className="text-secondary text-xs italic">"{order.customer.notes}"</p>
         )}
       </div>
+
+      {remote.state === 'unpaid' && (
+        <p role="status" className="bg-surface border border-border rounded-xl px-4 py-3 text-secondary text-sm text-center">
+          Estamos confirmando tu pago. Esta pantalla se actualiza sola.
+        </p>
+      )}
 
       {/* Guardar folio */}
       <FolioActions folio={order.id} />

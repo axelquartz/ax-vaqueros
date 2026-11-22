@@ -2,6 +2,9 @@ import type { Order } from '@/types/order'
 import { canTransition, type OrderStatusId } from './status'
 import { seedActiveOrders } from './seed'
 import { generateHistory } from './history'
+import { createSupabaseOrderRepository } from './supabaseRepository'
+import { isSupabaseConfigured } from '@/lib/supabase/config'
+import { getBrowserSupabase } from '@/lib/supabase/browser'
 
 /**
  * Acceso a pedidos. Toda la UI (panel, checkout, estatus del cliente) pasa por
@@ -118,12 +121,37 @@ export function createLocalOrderRepository(
 let instance: OrderRepository | null = null
 let instanceOptions: LocalRepositoryOptions = {}
 
+// ── Errores de sincronización (para avisar en el panel) ──
+let lastError: string | null = null
+const errorListeners = new Set<() => void>()
+function reportError(message: string | null) {
+  lastError = message
+  errorListeners.forEach(l => l())
+}
+export const getRepositoryError = () => lastError
+export const clearRepositoryError = () => reportError(null)
+export function subscribeRepositoryError(listener: () => void) {
+  errorListeners.add(listener)
+  return () => { errorListeners.delete(listener) }
+}
+
+/**
+ * Repositorio del panel: Supabase si está configurado (pedidos reales, en
+ * tiempo real, solo para el equipo con sesión); si no, la demo local con
+ * historial de ejemplo. Los clientes nunca usan esto: consultan su pedido por
+ * la API (/api/orders/[folio]).
+ */
 export function getOrderRepository(): OrderRepository {
-  return (instance ??= createLocalOrderRepository(window.localStorage, instanceOptions))
+  if (instance) return instance
+  instance = isSupabaseConfigured()
+    ? createSupabaseOrderRepository(getBrowserSupabase(), { onError: reportError })
+    : createLocalOrderRepository(window.localStorage, instanceOptions)
+  return instance
 }
 
 /** Solo para pruebas: la siguiente llamada crea un repositorio nuevo */
 export function resetOrderRepository(options: LocalRepositoryOptions = {}) {
   instance = null
   instanceOptions = options
+  lastError = null
 }
