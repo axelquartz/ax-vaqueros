@@ -1,7 +1,7 @@
 {
   "timezone": "America/Monterrey",
   "schedule": [
-    { "day": 0, "label": "Domingo",    "open": "13:00", "close": "22:00" },
+    { "day": 0, "label": "Domingo",    "open": "12:00", "close": "22:00" },
     { "day": 1, "label": "Lunes",      "open": null,    "close": null    },
     { "day": 2, "label": "Martes",     "open": "13:00", "close": "22:00" },
     { "day": 3, "label": "Miércoles",  "open": "13:00", "close": "22:00" },
