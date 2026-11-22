@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { NextRequest } from 'next/server'
 import { priceLine, priceOrder, PricingError, MAX_QUANTITY_PER_LINE } from '@/lib/pricing'
-import { POST } from '@/app/api/checkout/payment-intent/route'
+import { POST } from '@/app/api/checkout/order/route'
 
 // Horario controlado: las pruebas no dependen de la hora a la que corren
 const { store } = vi.hoisted(() => ({ store: { open: true } }))
@@ -74,9 +74,9 @@ describe('priceOrder', () => {
   })
 })
 
-describe('POST /api/checkout/payment-intent', () => {
+describe('POST /api/checkout/order', () => {
   const call = (body: unknown) =>
-    POST(new NextRequest('http://localhost/api/checkout/payment-intent', { method: 'POST', body: JSON.stringify(body) }))
+    POST(new NextRequest('http://localhost/api/checkout/order', { method: 'POST', body: JSON.stringify(body) }))
 
   const valid = {
     deliveryMethod: 'pickup',
