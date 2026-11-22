@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { Badge } from '@/components/ui/Badge'
@@ -12,6 +12,7 @@ import { findOrder } from '@/lib/orderHistory'
 import { useOrder } from '@/hooks/useOrders'
 import { useCustomerOrder } from '@/hooks/useCustomerOrder'
 import { isSupabaseConfigured } from '@/lib/supabase/config'
+import { statusCopy } from '@/lib/orders/statusCopy'
 import ordersData from '@/data/orders.json'
 import type { Order } from '@/types/order'
 import type { BadgeColor } from '@/components/ui/Badge'
@@ -61,6 +62,7 @@ export function OrderStatus({ order: baseOrder, justPaid = false }: OrderStatusP
   const local  = useOrder(baseOrder.id, { enabled: !online })
   const remoteOrder = remote.state === 'paid' || remote.state === 'unpaid' ? remote.order : undefined
   const order = remoteOrder ?? local ?? fromHistory
+  const announcement = useStatusAnnouncement((remoteOrder ?? local)?.status)
 
   // Quita ?pagado=1 para que recargar la página no repita la animación
   useEffect(() => {
@@ -77,6 +79,16 @@ export function OrderStatus({ order: baseOrder, justPaid = false }: OrderStatusP
     <div className="max-w-md mx-auto px-4 py-6 space-y-4">
 
       {justPaid && <PaymentSuccess />}
+
+      {/* Aviso cuando el restaurante avanza el pedido mientras el cliente mira */}
+      <div aria-live="polite" className="fixed inset-x-0 z-[60] flex justify-center px-4 pointer-events-none" style={{ top: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}>
+        {announcement && (
+          <p key={announcement.id} role="status" className="max-w-sm w-full bg-elevated border border-brand/50 rounded-xl px-4 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.5)] animate-rise-in">
+            <span className="block text-foreground text-sm font-semibold">{statusCopy(announcement.status, order.deliveryMethod).title}</span>
+            <span className="block text-secondary text-xs mt-0.5">{statusCopy(announcement.status, order.deliveryMethod).detail}</span>
+          </p>
+        )}
+      </div>
 
       {/* El resto entra después de la confirmación */}
       <div className={justPaid ? 'space-y-4 animate-fade-up [animation-delay:550ms]' : 'space-y-4'}>
@@ -96,7 +108,7 @@ export function OrderStatus({ order: baseOrder, justPaid = false }: OrderStatusP
           </p>
         )}
         {order.customer.notes && (
-          <p className="text-secondary text-xs italic">"{order.customer.notes}"</p>
+          <p className="text-secondary text-xs italic">“{order.customer.notes}”</p>
         )}
       </div>
 
@@ -110,7 +122,12 @@ export function OrderStatus({ order: baseOrder, justPaid = false }: OrderStatusP
       <FolioActions folio={order.id} />
 
       {/* Tracker de estatus */}
-      <StatusTracker currentStatus={order.status} isDelivery={isDelivery} />
+      <StatusTracker
+        currentStatus={order.status}
+        isDelivery={isDelivery}
+        deliveryMethod={order.deliveryMethod}
+        updatedAt={remoteOrder || local ? order.updatedAt : undefined}
+      />
 
       {/* Mapa de seguimiento (solo domicilio en tránsito) */}
       {showMap && <OrderMap />}
@@ -148,4 +165,33 @@ export function OrderStatus({ order: baseOrder, justPaid = false }: OrderStatusP
       </div>
     </div>
   )
+}
+
+const ANNOUNCE_MS = 5000
+
+/**
+ * Detecta cuando el estatus en vivo cambia (no la primera carga) y devuelve un
+ * aviso temporal; además vibra el celular si el navegador lo permite.
+ */
+function useStatusAnnouncement(liveStatus: string | undefined) {
+  const [seen, setSeen] = useState(liveStatus)
+  const [announcement, setAnnouncement] = useState<{ id: number; status: string } | null>(null)
+
+  // Ajuste de estado durante el render (patrón recomendado por React para
+  // reaccionar a un cambio de prop sin un efecto extra)
+  if (liveStatus !== seen) {
+    setSeen(liveStatus)
+    if (seen !== undefined && liveStatus !== undefined) {
+      setAnnouncement(prev => ({ id: (prev?.id ?? 0) + 1, status: liveStatus }))
+    }
+  }
+
+  useEffect(() => {
+    if (!announcement) return
+    navigator.vibrate?.(180)
+    const t = setTimeout(() => setAnnouncement(null), ANNOUNCE_MS)
+    return () => clearTimeout(t)
+  }, [announcement])
+
+  return announcement
 }
