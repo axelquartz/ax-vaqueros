@@ -53,20 +53,40 @@ export function createSupabaseOrderRepository(
     notify()
   }
 
-  function start() {
-    if (started) return
-    started = true
-    db
+  const RETRY_MS = 5_000
+
+  function connect() {
+    const channel = db
       .channel('orders-panel')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
         const row = payload.new as OrderRow | undefined
         if (row?.id && row.paid_at) upsert(rowToOrder(row))
       })
       .subscribe(status => {
-        // Al reconectar se vuelve a cargar para no perder pedidos de mientras
+        // Al (re)conectar se vuelve a cargar para no perder pedidos de mientras
         if (status === 'SUBSCRIBED') void load()
+        // Conexión caída (sueño de la compu, token vencido, red): reintentar
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          setTimeout(() => {
+            void db.removeChannel(channel)
+            connect()
+          }, RETRY_MS)
+        }
       })
+  }
+
+  function start() {
+    if (started) return
+    started = true
+    connect()
     void load()
+    if (typeof window !== 'undefined') {
+      // Un panel abierto por horas: al volver a la pestaña o recuperar internet, ponerse al día
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') void load()
+      })
+      window.addEventListener('online', () => void load())
+    }
   }
 
   return {

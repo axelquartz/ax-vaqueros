@@ -107,7 +107,7 @@ function StepIndicator({ current }: { current: StepId }) {
 }
 
 // ─── Step 1: Resumen ──────────────────────────────────────
-function StepReview({ onNext }: { onNext: () => void }) {
+function StepReview({ onNext, upsell }: { onNext: () => void; upsell?: React.ReactNode }) {
   const { items, total, updateQuantity } = useCart()
   const [open, setOpen]         = useState(true)
   const [statusText, setStatus] = useState('')
@@ -156,6 +156,10 @@ function StepReview({ onNext }: { onNext: () => void }) {
           <span className="text-foreground text-sm font-semibold">${total}</span>
         </div>
       </div>
+      {/* "¿Te falta algo?" mientras todavía arma su pedido: así el total ya es
+          el final al llegar al pago (no hay que recalcular el cobro) */}
+      {open && upsell}
+
       <Button fullWidth onClick={onNext} disabled={items.length === 0 || !open}>Continuar</Button>
     </div>
   )
@@ -261,14 +265,12 @@ interface PaymentFormProps {
   onBack: () => void
   /** Pago exitoso: el contenedor registra el pedido y navega a la confirmación */
   onPaid: () => void | Promise<void>
-  /** Bloque "¿Te falta algo?" — se muestra antes del desglose */
-  upsell?: React.ReactNode
   /** El total cambió y el cobro se está actualizando: no permitir pagar aún */
   refreshing?: boolean
 }
 
 // ─── Step 4: Pago demo (sin Stripe) ──────────────────────
-function DemoPaymentForm({ total, deliveryFee, onBack, onPaid, upsell, refreshing }: PaymentFormProps) {
+function DemoPaymentForm({ total, deliveryFee, onBack, onPaid, refreshing }: PaymentFormProps) {
   const [submitting, setSubmitting] = useState(false)
   const orderTotal = total + deliveryFee
 
@@ -308,7 +310,6 @@ function DemoPaymentForm({ total, deliveryFee, onBack, onPaid, upsell, refreshin
         </div>
       </div>
 
-      {upsell}
 
       {/* Desglose */}
       <div className="bg-surface border border-border rounded-xl px-4 py-3 space-y-2">
@@ -339,7 +340,7 @@ function DemoPaymentForm({ total, deliveryFee, onBack, onPaid, upsell, refreshin
 }
 
 // ─── Step 4: Pago (dentro de Elements) ───────────────────
-function PaymentForm({ total, deliveryFee, folio, onBack, onPaid, upsell, refreshing }: PaymentFormProps) {
+function PaymentForm({ total, deliveryFee, folio, onBack, onPaid, refreshing }: PaymentFormProps) {
   const stripe   = useStripe()
   const elements = useElements()
 
@@ -385,7 +386,6 @@ function PaymentForm({ total, deliveryFee, folio, onBack, onPaid, upsell, refres
         <p className="text-error text-xs px-1">{stripeError}</p>
       )}
 
-      {upsell}
 
       {/* Desglose */}
       <div className="bg-surface border border-border rounded-xl px-4 py-3 space-y-2">
@@ -639,7 +639,7 @@ export function CheckoutFlow() {
       {/* key={step} re-monta el contenido y dispara la transición en cada paso */}
       <div key={step} className="animate-fade-up">
         {step === 'review' && (
-          <StepReview onNext={() => setStep('delivery')} />
+          <StepReview onNext={() => setStep('delivery')} upsell={upsell} />
         )}
         {step === 'delivery' && (
           <StepDelivery
@@ -671,7 +671,6 @@ export function CheckoutFlow() {
               folio={folio}
               onBack={() => setStep('customer')}
               onPaid={completeOrder}
-              upsell={upsell}
               refreshing={intentStale}
             />
           ) : (
@@ -686,7 +685,6 @@ export function CheckoutFlow() {
                 folio={folio}
                 onBack={() => setStep('customer')}
                 onPaid={completeOrder}
-                upsell={upsell}
                 refreshing={intentStale}
               />
             </Elements>
