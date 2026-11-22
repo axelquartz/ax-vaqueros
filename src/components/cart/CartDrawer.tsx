@@ -79,8 +79,12 @@ export function CartDrawer() {
        </div>
       </div>
 
-      {/* Barra persistente — siempre visible y clickeable */}
-      <div className="bg-surface border-t border-border px-4 py-3 flex items-center gap-3">
+      {/* Barra persistente — siempre visible y clickeable. El padding inferior
+          deja libre la zona del gesto de inicio (iPhone) y la insignia del hosting. */}
+      <div
+        className="bg-surface border-t border-border px-4 pt-3 flex items-center gap-3"
+        style={{ paddingBottom: 'calc(0.75rem + max(var(--host-badge-inset, 0px), env(safe-area-inset-bottom, 0px)))' }}
+      >
         {/* Resumen — toca para expandir/colapsar */}
         <button
           onClick={() => setExpanded(e => !e)}

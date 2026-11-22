@@ -214,7 +214,7 @@ export function ProductSheet({ product: incoming, onClose }: ProductSheetProps) 
         {/* Footer fijo: siempre visible aunque haya muchas variantes */}
         <div
           className="shrink-0 border-t border-border-subtle px-4 pt-3"
-          style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
+          style={{ paddingBottom: 'calc(0.75rem + max(var(--host-badge-inset, 0px), env(safe-area-inset-bottom, 0px)))' }}
         >
           {/* Cantidad + Agregar */}
           <div className="flex items-center justify-between">
