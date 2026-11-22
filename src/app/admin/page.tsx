@@ -1,14 +1,14 @@
 import { MerchantPanel } from '@/components/merchant/MerchantPanel'
 import { PerformanceDashboard } from '@/components/merchant/PerformanceDashboard'
 import { Logo } from '@/components/brand/Logo'
-import { isAdminAuthRequired } from '@/lib/adminAuth'
-import { logout } from './actions'
+import { isSupabaseConfigured } from '@/lib/supabase/config'
+import { LogoutButton } from './LogoutButton'
 
 export const metadata = { title: "Admin — Vaquero's", robots: { index: false } }
 
 export default function AdminPage() {
   // El acceso se valida en src/proxy.ts antes de llegar aquí
-  const protectedByPassword = isAdminAuthRequired()
+  const online = isSupabaseConfigured()
 
   return (
     <div className="min-h-screen">
@@ -19,18 +19,12 @@ export default function AdminPage() {
             <span className="h-6 w-px bg-border" aria-hidden />
             <p className="text-foreground font-semibold text-sm">Panel de operación</p>
           </div>
-          {protectedByPassword && (
-            <form action={logout}>
-              <button type="submit" className="min-h-10 px-3 text-sm text-muted hover:text-foreground transition-colors">
-                Salir
-              </button>
-            </form>
-          )}
+          {online && <LogoutButton />}
         </div>
       </header>
-      {!protectedByPassword && (
+      {!online && (
         <p className="max-w-6xl mx-auto px-4 mt-4 text-warning text-xs">
-          Modo desarrollo: el panel no tiene contraseña. En producción se requiere ADMIN_PASSWORD.
+          Modo demo: sin Supabase, el panel no pide acceso y usa pedidos de ejemplo guardados en este navegador.
         </p>
       )}
       <MerchantPanel />

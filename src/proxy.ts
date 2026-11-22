@@ -1,20 +1,64 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { ADMIN_COOKIE, isAdminAuthRequired, verifySessionToken } from '@/lib/adminAuth'
+import { createServerClient } from '@supabase/ssr'
+import { isSupabaseConfigured } from '@/lib/supabase/config'
+
+const LOGIN = '/admin/login'
 
 /**
- * Protege /admin: sin sesión válida, redirige a /admin/login.
- * (El panel hoy lee los pedidos en el navegador, así que no hay datos del
- * servidor que proteger más abajo; con Supabase, cada consulta validará
- * además la sesión del usuario.)
+ * Protege /admin: hace falta una sesión de Supabase de alguien registrado en
+ * la tabla `staff`. Además renueva la sesión (cookies) en cada visita.
+ *
+ * Esta es la puerta de la página; los datos los protegen además las reglas
+ * RLS de la base de datos, así que aunque alguien se saltara esta revisión no
+ * vería pedidos.
+ *
+ * Sin Supabase configurado: en desarrollo el panel se abre (demo local); en
+ * producción queda cerrado.
  */
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
-  if (pathname === '/admin/login' || !isAdminAuthRequired()) return NextResponse.next()
+  if (pathname === LOGIN) return NextResponse.next()
 
-  const ok = await verifySessionToken(request.cookies.get(ADMIN_COOKIE)?.value)
-  if (ok) return NextResponse.next()
+  if (!isSupabaseConfigured()) {
+    if (process.env.NODE_ENV !== 'production') return NextResponse.next()
+    return NextResponse.redirect(new URL(LOGIN, request.url))
+  }
 
-  return NextResponse.redirect(new URL('/admin/login', request.url))
+  let response = NextResponse.next({ request })
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    {
+      cookies: {
+        getAll: () => request.cookies.getAll(),
+        setAll(cookiesToSet, headers) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          response = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
+          Object.entries(headers ?? {}).forEach(([key, value]) => response.headers.set(key, value))
+        },
+      },
+    },
+  )
+
+  // getClaims verifica la firma del token (no basta con leer la cookie)
+  const { data } = await supabase.auth.getClaims()
+  const userId = data?.claims?.sub
+  if (!userId) return redirectKeepingCookies(request, response)
+
+  const { data: staff } = await supabase.from('staff').select('user_id').eq('user_id', userId).maybeSingle()
+  if (!staff) return redirectKeepingCookies(request, response, 'sin-acceso')
+
+  return response
+}
+
+/** Redirige al login conservando las cookies de sesión renovadas */
+function redirectKeepingCookies(request: NextRequest, from: NextResponse, error?: string) {
+  const url = new URL(LOGIN, request.url)
+  if (error) url.searchParams.set('error', error)
+  const redirect = NextResponse.redirect(url)
+  from.cookies.getAll().forEach(cookie => redirect.cookies.set(cookie))
+  return redirect
 }
 
 export const config = {

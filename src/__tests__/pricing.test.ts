@@ -79,16 +79,18 @@ describe('POST /api/checkout/payment-intent', () => {
     POST(new NextRequest('http://localhost/api/checkout/payment-intent', { method: 'POST', body: JSON.stringify(body) }))
 
   const valid = {
-    folio: 'ORD-1234',
     deliveryMethod: 'pickup',
     customer: { name: 'Cliente', phone: '5500000000' },
     items: [{ productId: 'dedos-queso-5', quantity: 2, selectedVariants: {} }],
   }
 
-  it('calcula el total en el servidor', async () => {
+  it('calcula el total en el servidor y asigna el folio', async () => {
     const res = await call(valid)
     expect(res.status).toBe(200)
-    expect((await res.json()).amount).toBe(product('dedos-queso-5').price * 2)
+    const data = await res.json()
+    expect(data.amount).toBe(product('dedos-queso-5').price * 2)
+    expect(data.folio).toMatch(/^ORD-\d{5}$/)
+    expect(data.accessToken).toBeUndefined() // sin Supabase no se guarda nada
   })
 
   it('ignora montos manipulados enviados por el cliente', async () => {
@@ -102,7 +104,6 @@ describe('POST /api/checkout/payment-intent', () => {
   })
 
   it.each([
-    ['folio inválido', { ...valid, folio: 'hack' }],
     ['sin datos de cliente', { ...valid, customer: { name: '', phone: '' } }],
     ['producto inexistente', { ...valid, items: [{ productId: 'gratis', quantity: 1, selectedVariants: {} }] }],
     ['cantidad negativa', { ...valid, items: [{ productId: 'agua', quantity: -3, selectedVariants: {} }] }],

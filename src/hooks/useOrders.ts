@@ -12,11 +12,17 @@ export function useOrders(): Order[] {
   return useSyncExternalStore(subscribe, () => getOrderRepository().list(), () => EMPTY)
 }
 
-/** Un pedido por folio, en vivo (undefined si no existe en este dispositivo/backend). */
-export function useOrder(id: string): Order | undefined {
+const noopSubscribe = () => () => {}
+
+/**
+ * Un pedido por folio, en vivo, desde el repositorio (demo local).
+ * `enabled: false` no toca el repositorio (con Supabase el cliente consulta
+ * su pedido por la API: useCustomerOrder).
+ */
+export function useOrder(id: string, { enabled = true }: { enabled?: boolean } = {}): Order | undefined {
   return useSyncExternalStore(
-    subscribe,
-    () => getOrderRepository().get(id),
+    enabled ? subscribe : noopSubscribe,
+    () => (enabled ? getOrderRepository().get(id) : undefined),
     () => undefined,
   )
 }
