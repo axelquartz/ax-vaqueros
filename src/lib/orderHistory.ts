@@ -42,9 +42,8 @@ export function readOrders(): SavedOrder[] {
 }
 
 // ── Llaves de pedidos aún sin pagar ──
-// Se guardan antes de ir a Stripe: si el banco pide verificación y el
-// navegador vuelve a /order/[folio] por redirección, la pantalla de estatus
-// todavía puede consultar el pedido.
+// Se guardan antes de pagar: si el pago queda en revisión o el cliente
+// cierra la página, la pantalla de estatus todavía puede consultar el pedido.
 const TOKENS_KEY = 'ax_order_tokens'
 const MAX_TOKENS = 10
 

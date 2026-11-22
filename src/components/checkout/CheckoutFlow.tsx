@@ -2,13 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { loadStripe } from '@stripe/stripe-js'
-import {
-  Elements,
-  PaymentElement,
-  useStripe,
-  useElements,
-} from '@stripe/react-stripe-js'
+import { CardPayment, initMercadoPago } from '@mercadopago/sdk-react'
 import { Input, Textarea } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { useCart } from '@/context/CartContext'
@@ -29,24 +23,32 @@ const CheckoutMap = dynamic(
   { ssr: false }
 )
 
-// ─── Stripe setup ─────────────────────────────────────────
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+// ─── Mercado Pago ─────────────────────────────────────────
+const MP_PUBLIC_KEY = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY
+if (typeof window !== 'undefined' && MP_PUBLIC_KEY) initMercadoPago(MP_PUBLIC_KEY, { locale: 'es-MX' })
 
-const stripeAppearance = {
-  theme: 'night' as const,
-  variables: {
-    colorPrimary:         '#C49B6C',
-    colorBackground:      '#28211B',
-    colorText:            '#F2EADD',
-    colorTextPlaceholder: '#8C7F6E',
-    colorDanger:          '#E05C5C',
-    borderRadius:         '12px',
-    fontSizeBase:         '14px',
-  },
-  rules: {
-    '.Input':       { border: '1px solid #352D25', boxShadow: 'none' },
-    '.Input:focus': { border: '1px solid #C49B6C', boxShadow: 'none' },
-    '.Label':       { color: '#B4A691', fontSize: '12px', fontWeight: '500' },
+/** Formulario de tarjeta con la paleta de la marca (tema oscuro) */
+const mpCustomization = {
+  paymentMethods: { maxInstallments: 1 },
+  visual: {
+    style: {
+      theme: 'dark' as const,
+      customVariables: {
+        baseColor:            '#C49B6C',
+        baseColorFirstVariant: '#B08758',
+        baseColorSecondVariant: '#9A7448',
+        formBackgroundColor:  '#1D1814',
+        inputBackgroundColor: '#28211B',
+        textPrimaryColor:     '#F2EADD',
+        textSecondaryColor:   '#B4A691',
+        outlinePrimaryColor:  '#352D25',
+        outlineSecondaryColor: '#C49B6C',
+        buttonTextColor:      '#14100D',
+        errorColor:           '#DE6A55',
+        borderRadiusMedium:   '12px',
+        borderRadiusLarge:    '12px',
+      },
+    },
   },
 }
 
@@ -262,15 +264,36 @@ interface PaymentFormProps {
   total: number
   deliveryFee: number
   folio: string
+  /** Llave privada del pedido guardado (con Supabase) */
+  accessToken?: string
   onBack: () => void
-  /** Pago exitoso: el contenedor registra el pedido y navega a la confirmación */
-  onPaid: () => void | Promise<void>
-  /** El total cambió y el cobro se está actualizando: no permitir pagar aún */
-  refreshing?: boolean
+  /** Cobro aprobado (o pendiente de revisión del banco): registrar y navegar */
+  onPaid: (result?: { pending: boolean }) => void | Promise<void>
 }
 
-// ─── Step 4: Pago demo (sin Stripe) ──────────────────────
-function DemoPaymentForm({ total, deliveryFee, onBack, onPaid, refreshing }: PaymentFormProps) {
+function Breakdown({ total, deliveryFee }: { total: number; deliveryFee: number }) {
+  return (
+    <div className="bg-surface border border-border rounded-xl px-4 py-3 space-y-2">
+      <div className="flex justify-between text-sm">
+        <span className="text-secondary">Subtotal</span>
+        <span className="text-foreground">${total}</span>
+      </div>
+      {deliveryFee > 0 && (
+        <div className="flex justify-between text-sm">
+          <span className="text-secondary">Envío</span>
+          <span className="text-foreground">${deliveryFee}</span>
+        </div>
+      )}
+      <div className="flex justify-between font-semibold border-t border-border pt-2">
+        <span className="text-foreground">Total</span>
+        <span className="text-foreground">${total + deliveryFee}</span>
+      </div>
+    </div>
+  )
+}
+
+// ─── Step 4: Pago demo (sin Mercado Pago) ────────────────
+function DemoPaymentForm({ total, deliveryFee, onBack, onPaid }: PaymentFormProps) {
   const [submitting, setSubmitting] = useState(false)
   const orderTotal = total + deliveryFee
 
@@ -284,14 +307,14 @@ function DemoPaymentForm({ total, deliveryFee, onBack, onPaid, refreshing }: Pay
     <div className="space-y-4">
       <div>
         <h2 className="font-display text-[1.625rem] font-bold leading-none text-foreground">Pago</h2>
-        <p className="text-muted text-sm mt-1.5">Tus datos están protegidos por Stripe</p>
+        <p className="text-muted text-sm mt-1.5">Pago seguro con Mercado Pago</p>
       </div>
 
       {/* Aviso modo demo */}
       <div className="bg-warning/10 border border-warning/30 rounded-xl px-4 py-3">
         <p className="text-warning text-xs font-medium">Modo demo activo</p>
         <p className="text-muted text-sm mt-1.5">
-          Configura <code className="text-brand">STRIPE_SECRET_KEY</code> en <code className="text-brand">.env.local</code> para habilitar pagos reales.
+          Configura las credenciales de Mercado Pago para habilitar pagos reales.
         </p>
       </div>
 
@@ -311,115 +334,75 @@ function DemoPaymentForm({ total, deliveryFee, onBack, onPaid, refreshing }: Pay
       </div>
 
 
-      {/* Desglose */}
-      <div className="bg-surface border border-border rounded-xl px-4 py-3 space-y-2">
-        <div className="flex justify-between text-sm">
-          <span className="text-secondary">Subtotal</span>
-          <span className="text-foreground">${total}</span>
-        </div>
-        {deliveryFee > 0 && (
-          <div className="flex justify-between text-sm">
-            <span className="text-secondary">Envío</span>
-            <span className="text-foreground">${deliveryFee}</span>
-          </div>
-        )}
-        <div className="flex justify-between font-semibold border-t border-border pt-2">
-          <span className="text-foreground">Total</span>
-          <span className="text-foreground">${orderTotal}</span>
-        </div>
-      </div>
+      <Breakdown total={total} deliveryFee={deliveryFee} />
 
       <div className="flex gap-3">
         <Button variant="ghost" onClick={onBack} disabled={submitting} className="flex-1">Atrás</Button>
-        <Button onClick={handlePay} disabled={submitting || refreshing} className="flex-1">
-          {submitting ? 'Procesando...' : refreshing ? 'Actualizando total…' : `Simular pago de $${orderTotal}`}
+        <Button onClick={handlePay} disabled={submitting} className="flex-1">
+          {submitting ? 'Procesando...' : `Simular pago de $${orderTotal}`}
         </Button>
       </div>
     </div>
   )
 }
 
-// ─── Step 4: Pago (dentro de Elements) ───────────────────
-function PaymentForm({ total, deliveryFee, folio, onBack, onPaid, refreshing }: PaymentFormProps) {
-  const stripe   = useStripe()
-  const elements = useElements()
-
-  const [submitting, setSubmitting] = useState(false)
-  const [stripeError, setStripeError] = useState<string | null>(null)
-
+// ─── Step 4: Pago con Mercado Pago ───────────────────────
+function PaymentForm({ total, deliveryFee, folio, accessToken, onBack, onPaid }: PaymentFormProps) {
+  const [error, setError] = useState<string | null>(null)
+  const [ready, setReady] = useState(false)
   const orderTotal = total + deliveryFee
 
-  const handlePay = async () => {
-    if (!stripe || !elements) return
-    setSubmitting(true)
-    setStripeError(null)
-
-    const { error } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: `${window.location.origin}/order/${folio}`,
-      },
-      redirect: 'if_required',
+  // El Brick llama a esto con la tarjeta tokenizada (los datos de la tarjeta
+  // nunca pasan por nuestro servidor). Rechazar la promesa le indica al Brick
+  // que el pago falló para que el cliente pueda corregir y reintentar.
+  const handleSubmit = async (form: unknown) => {
+    setError(null)
+    const res = await fetch('/api/checkout/pay', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', [ORDER_TOKEN_HEADER]: accessToken ?? '' },
+      body: JSON.stringify({ folio, form }),
     })
-
-    if (error) {
-      setStripeError(error.message ?? 'Error al procesar el pago')
-      setSubmitting(false)
-    } else {
-      onPaid()
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      setError(data.error ?? 'No se pudo procesar el pago. Intenta de nuevo.')
+      throw new Error(data.error)
     }
+    await onPaid({ pending: data.status === 'pending' })
   }
 
   return (
     <div className="space-y-4">
       <div>
         <h2 className="font-display text-[1.625rem] font-bold leading-none text-foreground">Pago</h2>
-        <p className="text-muted text-sm mt-1.5">Tus datos están protegidos por Stripe</p>
+        <p className="text-muted text-sm mt-1.5">Pago seguro con Mercado Pago</p>
       </div>
 
-      {/* Stripe PaymentElement */}
-      <div className="bg-surface border border-border rounded-xl p-4">
-        <PaymentElement />
+      <Breakdown total={total} deliveryFee={deliveryFee} />
+
+      {!ready && <p className="text-muted text-sm px-1">Cargando formulario de pago…</p>}
+      <div className="rounded-xl overflow-hidden">
+        <CardPayment
+          initialization={{ amount: orderTotal }}
+          customization={mpCustomization}
+          locale="es-MX"
+          onSubmit={handleSubmit}
+          onReady={() => setReady(true)}
+          onError={err => console.error('Mercado Pago Brick:', err)}
+        />
       </div>
 
-      {stripeError && (
-        <p className="text-error text-xs px-1">{stripeError}</p>
-      )}
+      {error && <p role="alert" className="text-error text-sm px-1">{error}</p>}
 
-
-      {/* Desglose */}
-      <div className="bg-surface border border-border rounded-xl px-4 py-3 space-y-2">
-        <div className="flex justify-between text-sm">
-          <span className="text-secondary">Subtotal</span>
-          <span className="text-foreground">${total}</span>
-        </div>
-        {deliveryFee > 0 && (
-          <div className="flex justify-between text-sm">
-            <span className="text-secondary">Envío</span>
-            <span className="text-foreground">${deliveryFee}</span>
-          </div>
-        )}
-        <div className="flex justify-between font-semibold border-t border-border pt-2">
-          <span className="text-foreground">Total</span>
-          <span className="text-foreground">${orderTotal}</span>
-        </div>
-      </div>
-
-      <div className="flex gap-3">
-        <Button variant="ghost" onClick={onBack} disabled={submitting} className="flex-1">Atrás</Button>
-        <Button onClick={handlePay} disabled={submitting || !stripe || refreshing} className="flex-1">
-          {submitting ? 'Procesando...' : refreshing ? 'Actualizando total…' : `Pagar $${orderTotal}`}
-        </Button>
-      </div>
+      <Button variant="ghost" fullWidth onClick={onBack}>Atrás</Button>
     </div>
   )
 }
 
 interface IntentResult {
-  clientSecret: string
+  amount: number
   folio: string
   accessToken?: string
-  demo?: boolean
+  demo: boolean
 }
 
 // ─── Main ─────────────────────────────────────────────────
@@ -432,7 +415,6 @@ export function CheckoutFlow() {
   const [form, setForm]               = useState<FormState>({ name: '', phone: '', address: '', tableNumber: '', notes: '' })
   const [errors, setErrors]           = useState<Partial<FormState>>({})
   const [coords, setCoords]           = useState<{ lat: number; lng: number } | null>(null)
-  const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [isDemoMode, setIsDemoMode]   = useState(false)
   const [folio, setFolio]             = useState<string>('')
   /** Llave privada del pedido guardado en el servidor (solo con Supabase) */
@@ -440,6 +422,8 @@ export function CheckoutFlow() {
   const [creatingIntent, setCreatingIntent] = useState(false)
   const [intentAmount, setIntentAmount] = useState<number | null>(null)
   const [sheetProduct, setSheetProduct] = useState<Product | null>(null)
+  /** Pago hecho: mientras se abre la confirmación, no volver a pintar el pago con el carrito vacío */
+  const [leaving, setLeaving]         = useState(false)
 
   const selectedMethod = ordersData.deliveryMethods.find(m => m.id === deliveryMethod)!
   const orderTotal = total + selectedMethod.price
@@ -490,8 +474,7 @@ export function CheckoutFlow() {
       const data = await requestIntent(accessToken ? { folio, accessToken } : undefined, amount)
 
       applyIntent(data)
-      setClientSecret(data.clientSecret)
-      setIsDemoMode(!!data.demo)
+      setIsDemoMode(data.demo)
       setIntentAmount(amount)
       setStep('payment')
     } catch (err) {
@@ -502,17 +485,17 @@ export function CheckoutFlow() {
     }
   }
 
-  /** El servidor asigna el folio; la llave se guarda antes de pagar (por si Stripe redirige) */
+  /** El servidor asigna el folio; la llave se guarda antes de pagar (para consultar el pedido después) */
   function applyIntent(data: IntentResult) {
     setFolio(data.folio)
     setAccessToken(data.accessToken)
     if (data.accessToken) rememberOrderToken(data.folio, data.accessToken)
   }
 
-  /** Crea (o actualiza) el pedido y el Payment Intent con el carrito y datos actuales */
+  /** Crea (o actualiza) el pedido guardado con el carrito y datos actuales */
   async function requestIntent(draft: { folio: string; accessToken: string } | undefined, expectedAmount: number): Promise<IntentResult> {
       // Solo se envía QUÉ se pidió; el servidor calcula el total con el menú
-      const res = await fetch('/api/checkout/payment-intent', {
+      const res = await fetch('/api/checkout/order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -541,34 +524,10 @@ export function CheckoutFlow() {
       return data
   }
 
-  // Si el total cambia en el paso de pago (p. ej. "¿Te falta algo?"), el Payment
-  // Intent de Stripe quedó con el monto anterior: se crea uno nuevo con el total
-  // actual y se bloquea el botón de pago mientras tanto.
-  // (En demo sin Stripe también: con Supabase el pedido guardado debe tener el total nuevo.)
-  const intentStale = step === 'payment' && (!isDemoMode || !!accessToken) && intentAmount !== null && items.length > 0 && intentAmount !== orderTotal
-  useEffect(() => {
-    if (!intentStale) return
-    let cancelled = false
-    const amount = orderTotal
-    const t = setTimeout(() => {
-      requestIntent(accessToken ? { folio, accessToken } : undefined, amount)
-        .then(data => {
-          if (cancelled) return
-          applyIntent(data)
-          setClientSecret(data.clientSecret)
-          setIntentAmount(amount)
-        })
-        .catch(err => console.error('No se pudo actualizar el cobro', err))
-    }, 400)
-    return () => { cancelled = true; clearTimeout(t) }
-    // requestIntent lee el carrito/form actuales; basta con reaccionar al total
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [intentStale, orderTotal, folio, accessToken])
-
   const upsell = <Upsell onOpenProduct={setSheetProduct} />
 
   /** Pago confirmado: registra el pedido (le llega al panel), lo guarda en el dispositivo y navega */
-  const completeOrder = async () => {
+  const completeOrder = async (result?: { pending: boolean }) => {
     const now = new Date().toISOString()
     let order: Order = {
       id: folio,
@@ -598,8 +557,8 @@ export function CheckoutFlow() {
 
     if (accessToken) {
       // Con Supabase el pedido ya está guardado: el servidor confirma el pago
-      // (con Stripe, o directo en modo demo). Si no responde, la pantalla de
-      // estatus lo vuelve a intentar sola.
+      // (con Mercado Pago, o directo en modo demo). Si no responde, la
+      // pantalla de estatus lo vuelve a intentar sola.
       try {
         const res = await fetch(`/api/orders/${encodeURIComponent(folio)}`, {
           method: 'POST',
@@ -619,8 +578,10 @@ export function CheckoutFlow() {
       deliveryFee: order.deliveryFee, items: toSavedItems(items),
       accessToken,
     })
+    setLeaving(true)
     clearCart()
-    router.push(`/order/${folio}?pagado=1`)
+    // Pago en revisión del banco: sin animación de éxito; la pantalla avisa cuando se confirme
+    router.push(result?.pending ? `/order/${folio}` : `/order/${folio}?pagado=1`)
   }
 
   if (items.length === 0 && step !== 'payment') {
@@ -663,7 +624,10 @@ export function CheckoutFlow() {
             loading={creatingIntent}
           />
         )}
-        {step === 'payment' && clientSecret && (
+        {step === 'payment' && leaving && (
+          <p role="status" className="text-secondary text-sm text-center py-16">Pago listo. Abriendo tu pedido…</p>
+        )}
+        {step === 'payment' && !leaving && intentAmount !== null && (
           isDemoMode ? (
             <DemoPaymentForm
               total={total}
@@ -671,23 +635,18 @@ export function CheckoutFlow() {
               folio={folio}
               onBack={() => setStep('customer')}
               onPaid={completeOrder}
-              refreshing={intentStale}
             />
           ) : (
-            <Elements
-              key={clientSecret}
-              stripe={stripePromise}
-              options={{ clientSecret, appearance: stripeAppearance }}
-            >
-              <PaymentForm
-                total={total}
-                deliveryFee={selectedMethod.price}
-                folio={folio}
-                onBack={() => setStep('customer')}
-                onPaid={completeOrder}
-                refreshing={intentStale}
-              />
-            </Elements>
+            <PaymentForm
+              // Nuevo formulario si cambia el pedido (folio o total)
+              key={`${folio}-${intentAmount}`}
+              total={total}
+              deliveryFee={selectedMethod.price}
+              folio={folio}
+              accessToken={accessToken}
+              onBack={() => setStep('customer')}
+              onPaid={completeOrder}
+            />
           )
         )}
       </div>

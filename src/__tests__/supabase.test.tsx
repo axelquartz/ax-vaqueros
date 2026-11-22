@@ -1,6 +1,6 @@
 import { render, screen, act, waitFor } from '@testing-library/react'
 import { NextRequest } from 'next/server'
-import type Stripe from 'stripe'
+import { createHmac } from 'node:crypto'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Order } from '@/types/order'
 import type { OrderRow } from '@/lib/orders/rows'
@@ -186,90 +186,124 @@ describe('Repositorio Supabase: panel abierto por horas', () => {
   })
 })
 
-// ── Pedidos del lado del servidor ──────────────────────────────────────────
+// ── Pedidos del lado del servidor (Mercado Pago) ───────────────────────────
 const server = vi.hoisted(() => ({ db: null as unknown as SupabaseClient }))
 vi.mock('@/lib/supabase/server', () => ({ getServerSupabase: () => server.db }))
-import { getCustomerOrder, intentPaysOrder, markPaidByIntent } from '@/lib/orders/serverOrders'
+import { getCustomerOrder, markPaidByPayment } from '@/lib/orders/serverOrders'
+import { paymentPaysOrder, verifyWebhookSignature, type MpPayment } from '@/lib/mercadopago'
 
 const TOKEN = '7d3f1c2a-1111-4222-8333-444455556666'
-const intent = (over: Partial<Stripe.PaymentIntent> = {}) =>
-  ({ id: 'pi_1', status: 'succeeded', currency: 'mxn', amount_received: 1500, metadata: { folio: 'ORD-70000' }, ...over }) as Stripe.PaymentIntent
-const stripeWith = (pi: Stripe.PaymentIntent) => ({ paymentIntents: { retrieve: vi.fn(async () => pi) } }) as unknown as Stripe
+const mpPayment = (over: Partial<MpPayment> = {}): MpPayment => ({
+  id: 123456, status: 'approved', status_detail: 'accredited', transaction_amount: 15,
+  currency_id: 'MXN', external_reference: 'ORD-70000', ...over,
+})
+/** Responde a las llamadas a la API de Mercado Pago */
+function mockMercadoPago(handler: (url: string, init?: RequestInit) => unknown, status = 200) {
+  const fetchMock = vi.fn(async (url: string, init?: RequestInit) =>
+    new Response(JSON.stringify(handler(url, init)), { status }))
+  vi.stubGlobal('fetch', fetchMock)
+  return fetchMock
+}
+const mpEnv = () => vi.stubEnv('MERCADOPAGO_ACCESS_TOKEN', 'TEST-token')
 
 describe('Pedidos en el servidor', () => {
-  it('intentPaysOrder exige cobro exitoso, en MXN, del total exacto y del mismo folio', () => {
+  afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals() })
+
+  it('paymentPaysOrder exige aprobado, en MXN, del total exacto y del mismo folio', () => {
     const order = { id: 'ORD-70000', total: 15 }
-    expect(intentPaysOrder(intent(), order)).toBe(true)
-    expect(intentPaysOrder(intent({ status: 'processing' }), order)).toBe(false)
-    expect(intentPaysOrder(intent({ amount_received: 100 }), order)).toBe(false)
-    expect(intentPaysOrder(intent({ currency: 'usd' }), order)).toBe(false)
-    expect(intentPaysOrder(intent({ metadata: { folio: 'ORD-99999' } }), order)).toBe(false)
+    expect(paymentPaysOrder(mpPayment(), order)).toBe(true)
+    expect(paymentPaysOrder(mpPayment({ status: 'in_process' }), order)).toBe(false)
+    expect(paymentPaysOrder(mpPayment({ transaction_amount: 1 }), order)).toBe(false)
+    expect(paymentPaysOrder(mpPayment({ currency_id: 'USD' }), order)).toBe(false)
+    expect(paymentPaysOrder(mpPayment({ external_reference: 'ORD-99999' }), order)).toBe(false)
+  })
+
+  it('firma del aviso: acepta la correcta y rechaza una alterada', () => {
+    const secret = 'secreto'
+    const v1 = createHmac('sha256', secret).update('id:123456;request-id:req-1;ts:1700000000;').digest('hex')
+    const ok = { signature: `ts=1700000000,v1=${v1}`, requestId: 'req-1', dataId: '123456', secret }
+    expect(verifyWebhookSignature(ok)).toBe(true)
+    expect(verifyWebhookSignature({ ...ok, dataId: '999' })).toBe(false)
+    expect(verifyWebhookSignature({ ...ok, signature: null })).toBe(false)
   })
 
   it('cliente: con llave incorrecta no encuentra nada (y no consulta con un token mal formado)', async () => {
     const f = fakeDb(() => ({ data: null, error: null }))
     server.db = f.db
-    expect(await getCustomerOrder('ORD-70000', 'no-es-uuid', { stripe: null })).toEqual({ found: false })
+    expect(await getCustomerOrder('ORD-70000', 'no-es-uuid')).toEqual({ found: false })
     expect(f.calls).toHaveLength(0)
-    expect(await getCustomerOrder('ORD-70000', TOKEN, { stripe: null })).toEqual({ found: false })
+    expect(await getCustomerOrder('ORD-70000', TOKEN)).toEqual({ found: false })
     expect(has(f.calls[0], 'eq', 'access_token', TOKEN)).toBe(true)
   })
 
-  it('cliente: si Stripe ya cobró pero el aviso no ha llegado, lo marca pagado', async () => {
+  it('cliente: si Mercado Pago ya aprobó pero el aviso no ha llegado, lo marca pagado', async () => {
+    mpEnv()
+    const fetchMock = mockMercadoPago(() => mpPayment())
     const f = fakeDb(call =>
       has(call, 'update')
         ? { data: null, error: null }
-        : { data: { ...row('ORD-70000', { paid_at: null }), access_token: TOKEN, payment_intent_id: 'pi_1' }, error: null })
+        : { data: { ...row('ORD-70000', { paid_at: null }), access_token: TOKEN, payment_intent_id: '123456' }, error: null })
     server.db = f.db
-    const result = await getCustomerOrder('ORD-70000', TOKEN, { stripe: stripeWith(intent()) })
+    const result = await getCustomerOrder('ORD-70000', TOKEN)
     expect(result).toMatchObject({ found: true, paid: true, order: { id: 'ORD-70000', total: 15 } })
+    expect(fetchMock.mock.calls[0][0]).toBe('https://api.mercadopago.com/v1/payments/123456')
     const update = f.calls.find(c => has(c, 'update'))!
     expect(has(update, 'is', 'paid_at', null)).toBe(true) // idempotente
   })
 
   it('cliente: no marca pagado si el cobro no coincide con el total', async () => {
-    const f = fakeDb(() => ({ data: { ...row('ORD-70000', { paid_at: null }), access_token: TOKEN, payment_intent_id: 'pi_1' }, error: null }))
+    mpEnv()
+    mockMercadoPago(() => mpPayment({ transaction_amount: 1 }))
+    const f = fakeDb(() => ({ data: { ...row('ORD-70000', { paid_at: null }), access_token: TOKEN, payment_intent_id: '123456' }, error: null }))
     server.db = f.db
-    const result = await getCustomerOrder('ORD-70000', TOKEN, { stripe: stripeWith(intent({ amount_received: 100 })) })
-    expect(result).toMatchObject({ found: true, paid: false })
+    expect(await getCustomerOrder('ORD-70000', TOKEN)).toMatchObject({ found: true, paid: false })
     expect(f.calls.some(c => has(c, 'update'))).toBe(false)
   })
 
-  it('modo demo (sin Stripe): solo se marca pagado al confirmar', async () => {
+  it('con Mercado Pago, "confirmar" nunca marca pagado sin un pago aprobado', async () => {
+    mpEnv()
+    const f = fakeDb(() => ({ data: { ...row('ORD-70000', { paid_at: null }), access_token: TOKEN, payment_intent_id: null }, error: null }))
+    server.db = f.db
+    expect(await getCustomerOrder('ORD-70000', TOKEN, { confirmDemo: true })).toMatchObject({ paid: false })
+  })
+
+  it('modo demo (sin Mercado Pago): solo se marca pagado al confirmar', async () => {
     const f = fakeDb(call =>
       has(call, 'update') ? { data: null, error: null } : { data: { ...row('ORD-70000', { paid_at: null }), access_token: TOKEN, payment_intent_id: null }, error: null })
     server.db = f.db
-    expect(await getCustomerOrder('ORD-70000', TOKEN, { stripe: null })).toMatchObject({ paid: false })
-    expect(await getCustomerOrder('ORD-70000', TOKEN, { stripe: null, confirmDemo: true })).toMatchObject({ paid: true })
+    expect(await getCustomerOrder('ORD-70000', TOKEN)).toMatchObject({ paid: false })
+    expect(await getCustomerOrder('ORD-70000', TOKEN, { confirmDemo: true })).toMatchObject({ paid: true })
   })
 
-  it('aviso de Stripe: marca pagado el pedido de ese pago', async () => {
+  it('aviso: marca pagado el pedido del folio del pago', async () => {
     const f = fakeDb(call =>
       has(call, 'update') ? { data: null, error: null } : { data: { id: 'ORD-70000', total: 15, paid_at: null }, error: null })
     server.db = f.db
-    expect(await markPaidByIntent(intent())).toBe('ORD-70000')
+    expect(await markPaidByPayment(mpPayment())).toBe('ORD-70000')
     expect(f.calls.some(c => has(c, 'update'))).toBe(true)
   })
 
-  it('aviso de Stripe: ignora un pago con monto distinto', async () => {
+  it('aviso: ignora un pago con monto distinto', async () => {
     const f = fakeDb(() => ({ data: { id: 'ORD-70000', total: 999, paid_at: null }, error: null }))
     server.db = f.db
     vi.spyOn(console, 'warn').mockImplementation(() => {})
-    expect(await markPaidByIntent(intent())).toBeNull()
+    expect(await markPaidByPayment(mpPayment())).toBeNull()
     expect(f.calls.some(c => has(c, 'update'))).toBe(false)
   })
 })
 
 // ── Ruta de pago con Supabase ──────────────────────────────────────────────
 vi.mock('@/lib/storeHours', () => ({ isStoreOpen: () => true, getStoreStatusText: () => 'Abierto' }))
-import { POST as createIntent } from '@/app/api/checkout/payment-intent/route'
+import { POST as createIntent } from '@/app/api/checkout/order/route'
+import { POST as payRoute } from '@/app/api/checkout/pay/route'
+import { POST as mpWebhook } from '@/app/api/webhooks/mercadopago/route'
 import { GET as getOrderRoute, POST as confirmOrderRoute } from '@/app/api/orders/[folio]/route'
 
 const onlineEnv = () => {
   vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://demo.supabase.co')
   vi.stubEnv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'sb_publishable_test')
   vi.stubEnv('SUPABASE_SECRET_KEY', 'sb_secret_test')
-  vi.stubEnv('STRIPE_SECRET_KEY', '')
+  vi.stubEnv('MERCADOPAGO_ACCESS_TOKEN', '')
 }
 
 describe('API con Supabase', () => {
@@ -281,7 +315,7 @@ describe('API con Supabase', () => {
     items: [{ productId: 'agua', quantity: 1, selectedVariants: {} }],
   }
   const post = (b: unknown) =>
-    createIntent(new NextRequest('http://localhost/api/checkout/payment-intent', { method: 'POST', body: JSON.stringify(b) }))
+    createIntent(new NextRequest('http://localhost/api/checkout/order', { method: 'POST', body: JSON.stringify(b) }))
 
   it('guarda el borrador con el total del servidor y devuelve folio y llave', async () => {
     onlineEnv()
@@ -337,6 +371,91 @@ describe('API con Supabase', () => {
       { params: Promise.resolve({ folio: 'ORD-70000' }) },
     )
     expect(res.status).toBe(503)
+  })
+})
+
+// ── Cobro y aviso de Mercado Pago ──────────────────────────────────────────
+describe('Cobro con Mercado Pago', () => {
+  afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals() })
+
+  const draftRow = { ...row('ORD-70000', { paid_at: null, total: 245, subtotal: 245 }), access_token: TOKEN, payment_intent_id: null }
+  const form = { token: 'card-token', payment_method_id: 'visa', installments: 1, issuer_id: '1', payer: { email: 'ana@example.com' } }
+  const pay = (b: unknown, token = TOKEN) =>
+    payRoute(new NextRequest('http://localhost/api/checkout/pay', { method: 'POST', headers: { 'x-order-token': token }, body: JSON.stringify(b) }))
+
+  it('cobra el total guardado (no el del navegador) y marca pagado al aprobarse', async () => {
+    onlineEnv(); mpEnv()
+    const fetchMock = mockMercadoPago(() => mpPayment({ transaction_amount: 245 }))
+    const f = fakeDb(call => (has(call, 'update') ? { data: null, error: null } : { data: draftRow, error: null }))
+    server.db = f.db
+
+    const res = await pay({ folio: 'ORD-70000', form: { ...form, transaction_amount: 1 } })
+    expect(await res.json()).toEqual({ status: 'approved' })
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe('https://api.mercadopago.com/v1/payments')
+    const sent = JSON.parse(String(init?.body))
+    expect(sent).toMatchObject({ transaction_amount: 245, token: 'card-token', external_reference: 'ORD-70000' })
+    expect((init?.headers as Record<string, string>)['X-Idempotency-Key']).toBeTruthy()
+    const updates = f.calls.filter(c => has(c, 'update'))
+    expect(updates.map(c => Object.keys(c.ops[0][1][0] as object)[0])).toEqual(['payment_intent_id', 'paid_at'])
+  })
+
+  it('tarjeta rechazada: 402 con un mensaje claro y el pedido sigue sin pagar', async () => {
+    onlineEnv(); mpEnv()
+    mockMercadoPago(() => mpPayment({ status: 'rejected', status_detail: 'cc_rejected_insufficient_amount', transaction_amount: 245 }))
+    const f = fakeDb(call => (has(call, 'update') ? { data: null, error: null } : { data: draftRow, error: null }))
+    server.db = f.db
+    const res = await pay({ folio: 'ORD-70000', form })
+    expect(res.status).toBe(402)
+    expect((await res.json()).error).toBe('La tarjeta no tiene fondos suficientes.')
+    expect(f.calls.some(c => has(c, 'update') && Object.keys(c.ops[0][1][0] as object)[0] === 'paid_at')).toBe(false)
+  })
+
+  it('pago en revisión del banco: queda pendiente', async () => {
+    onlineEnv(); mpEnv()
+    mockMercadoPago(() => mpPayment({ status: 'in_process', status_detail: 'pending_contingency', transaction_amount: 245 }))
+    server.db = fakeDb(call => (has(call, 'update') ? { data: null, error: null } : { data: draftRow, error: null })).db
+    expect(await (await pay({ folio: 'ORD-70000', form })).json()).toEqual({ status: 'pending' })
+  })
+
+  it('sin la llave del pedido no se puede cobrar', async () => {
+    onlineEnv(); mpEnv()
+    const fetchMock = mockMercadoPago(() => mpPayment())
+    server.db = fakeDb(() => ({ data: null, error: null })).db
+    expect((await pay({ folio: 'ORD-70000', form }, '00000000-0000-4000-8000-000000000000')).status).toBe(404)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  const notify = (id: string, headers: Record<string, string> = {}) =>
+    mpWebhook(new NextRequest(`http://localhost/api/webhooks/mercadopago?data.id=${id}&type=payment`, {
+      method: 'POST', headers, body: JSON.stringify({ type: 'payment', action: 'payment.updated', data: { id } }),
+    }))
+
+  it('aviso: consulta el pago a Mercado Pago y marca pagado', async () => {
+    onlineEnv(); mpEnv()
+    const fetchMock = mockMercadoPago(() => mpPayment())
+    const f = fakeDb(call => (has(call, 'update') ? { data: null, error: null } : { data: { id: 'ORD-70000', total: 15, paid_at: null }, error: null }))
+    server.db = f.db
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+    expect((await notify('123456')).status).toBe(200)
+    expect(fetchMock.mock.calls[0][0]).toBe('https://api.mercadopago.com/v1/payments/123456')
+    expect(f.calls.some(c => has(c, 'update'))).toBe(true)
+  })
+
+  it('aviso con secreto configurado: rechaza firmas inválidas sin consultar nada', async () => {
+    onlineEnv(); mpEnv()
+    vi.stubEnv('MERCADOPAGO_WEBHOOK_SECRET', 'secreto')
+    const fetchMock = mockMercadoPago(() => mpPayment())
+    expect((await notify('123456', { 'x-signature': 'ts=1,v1=falsa', 'x-request-id': 'r' })).status).toBe(401)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('aviso de otro tipo: se confirma y se ignora', async () => {
+    onlineEnv(); mpEnv()
+    const fetchMock = mockMercadoPago(() => ({}))
+    const res = await mpWebhook(new NextRequest('http://localhost/api/webhooks/mercadopago', { method: 'POST', body: JSON.stringify({ type: 'merchant_order', data: { id: '1' } }) }))
+    expect(res.status).toBe(200)
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 })
 

@@ -8,7 +8,7 @@ import type { Order } from '@/types/order'
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }))
 vi.mock('@/lib/storeHours', () => ({ isStoreOpen: () => true, getStoreStatusText: () => 'Abierto hasta las 22:00' }))
-vi.mock('@stripe/stripe-js', () => ({ loadStripe: () => null }))
+vi.mock('@mercadopago/sdk-react', () => ({ initMercadoPago: vi.fn(), CardPayment: () => null }))
 import { OrderStatus } from '@/components/order/OrderStatus'
 import { CheckoutFlow } from '@/components/checkout/CheckoutFlow'
 

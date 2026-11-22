@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isServerSupabaseConfigured } from '@/lib/supabase/config'
 import { getCustomerOrder } from '@/lib/orders/serverOrders'
-import { getStripe } from '@/lib/stripe'
 import { ORDER_TOKEN_HEADER, type CustomerOrderResponse } from '@/lib/orders/customerApi'
 
 /**
  * Pedido del cliente. La llave privada del pedido viaja en el header
  * `x-order-token` (no en la URL, para que no quede en historiales ni logs).
  *
- * GET  → estatus actual (verifica con Stripe si el aviso de pago aún no llega)
- * POST → confirmar después de pagar; en modo demo (sin Stripe) lo marca pagado
+ * GET  → estatus actual (verifica con Mercado Pago si el aviso aún no llega)
+ * POST → confirmar después de pagar; en modo demo (sin Mercado Pago) lo marca pagado
  */
 const FOLIO_RE = /^ORD-\d{4,6}$/
 
@@ -24,7 +23,7 @@ async function handle(req: NextRequest, params: Promise<{ folio: string }>, conf
   }
 
   try {
-    const result = await getCustomerOrder(folio, token, { stripe: getStripe(), confirmDemo: confirm })
+    const result = await getCustomerOrder(folio, token, { confirmDemo: confirm })
     if (!result.found) return NextResponse.json({ error: 'Pedido no encontrado' }, { status: 404 })
     return NextResponse.json<CustomerOrderResponse>(
       { paid: result.paid, order: result.order },

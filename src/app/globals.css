@@ -148,3 +148,9 @@ body {
   font-family: var(--font-instrument-sans), ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
+
+/* Mercado Pago: sus campos seguros son iframes con esquema claro. Si el iframe
+   hereda nuestro color-scheme oscuro, Chrome les pinta un fondo blanco opaco. */
+#cardPaymentBrick_container iframe {
+  color-scheme: light;
+}
