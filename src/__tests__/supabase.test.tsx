@@ -29,17 +29,24 @@ function fakeDb(respond: (call: Call) => Result) {
     return chain
   }
 
+  let channels = 0
   const channel = {
     on: (_t: string, _f: unknown, cb: typeof realtime) => { realtime = cb; return channel },
     subscribe: (cb: typeof onSubscribe) => { onSubscribe = cb; return channel },
   }
 
-  const db = { from: builder, channel: () => channel } as unknown as SupabaseClient
+  const db = {
+    from: builder,
+    channel: () => { channels++; return channel },
+    removeChannel: async () => 'ok',
+  } as unknown as SupabaseClient
   return {
     db,
     calls,
     emit: (row: Partial<OrderRow>) => realtime?.({ new: row }),
     connect: () => onSubscribe?.('SUBSCRIBED'),
+    drop: () => onSubscribe?.('CHANNEL_ERROR'),
+    channels: () => channels,
   }
 }
 
@@ -150,6 +157,32 @@ describe('Repositorio Supabase (panel)', () => {
     f.connect()
     await flush()
     expect(loads()).toBe(2)
+  })
+})
+
+describe('Repositorio Supabase: panel abierto por horas', () => {
+  afterEach(() => vi.useRealTimers())
+
+  it('si se cae la conexión en tiempo real, se reconecta sola', async () => {
+    vi.useFakeTimers()
+    const f = fakeDb(() => ({ data: [], error: null }))
+    createSupabaseOrderRepository(f.db).subscribe(() => {})
+    expect(f.channels()).toBe(1)
+    f.drop()
+    await vi.advanceTimersByTimeAsync(5_000)
+    expect(f.channels()).toBe(2)
+  })
+
+  it('al volver a la pestaña o recuperar internet, vuelve a cargar', async () => {
+    const f = fakeDb(() => ({ data: [], error: null }))
+    createSupabaseOrderRepository(f.db).subscribe(() => {})
+    await flush()
+    const loads = () => f.calls.filter(c => has(c, 'not')).length
+    const before = loads()
+    act(() => { document.dispatchEvent(new Event('visibilitychange')) })
+    act(() => { window.dispatchEvent(new Event('online')) })
+    await flush()
+    expect(loads()).toBe(before + 2)
   })
 })
 
