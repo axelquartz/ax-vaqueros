@@ -7,6 +7,7 @@ import { ACTION_LABEL, URGENT_AFTER_MIN, canCancel, isActive, nextStatus, status
 import type { Order } from '@/types/order'
 import { isSupabaseConfigured } from '@/lib/supabase/config'
 import { RiderShare } from './RiderShare'
+import type { Rider } from '@/hooks/useRiders'
 
 export function minutesSince(iso: string, now: number): number {
   return Math.max(0, Math.floor((now - new Date(iso).getTime()) / 60_000))
@@ -32,9 +33,12 @@ interface OrderCardProps {
   isNew?: boolean
   onAdvance: (id: string, to: OrderStatusId) => void
   onCancel: (id: string) => void
+  /** Repartidores disponibles; si hay, se muestra el selector de asignación */
+  riders?: Rider[]
+  onAssign?: (id: string, riderId: string | null) => void
 }
 
-export function OrderCard({ order, now, isNew = false, onAdvance, onCancel }: OrderCardProps) {
+export function OrderCard({ order, now, isNew = false, onAdvance, onCancel, riders = [], onAssign }: OrderCardProps) {
   const [confirmingCancel, setConfirmingCancel] = useState(false)
   const method  = ordersData.deliveryMethods.find(m => m.id === order.deliveryMethod)
   const next    = nextStatus(order.status)
@@ -116,6 +120,21 @@ export function OrderCard({ order, now, isNew = false, onAdvance, onCancel }: Or
         <p className="mx-4 mt-3 rounded-lg bg-warning/10 border border-warning/25 px-3 py-2 text-warning text-sm">
           {order.customer.notes}
         </p>
+      )}
+
+      {/* Asignar repartidor (solo domicilio, mientras el pedido siga abierto) */}
+      {order.deliveryMethod === 'delivery' && isActive(order.status) && onAssign && riders.length > 0 && (
+        <label className="mx-4 mt-3 flex items-center justify-between gap-3 text-sm">
+          <span className="text-muted">Repartidor</span>
+          <select
+            value={order.riderId ?? ''}
+            onChange={e => onAssign(order.id, e.target.value || null)}
+            className="min-h-10 rounded-lg border border-border bg-elevated px-2 text-foreground text-sm"
+          >
+            <option value="">Sin asignar</option>
+            {riders.map(r => <option key={r.userId} value={r.userId}>{r.name || 'Repartidor'}</option>)}
+          </select>
+        </label>
       )}
 
       {/* Repartidor: compartir GPS con el cliente mientras va en camino */}

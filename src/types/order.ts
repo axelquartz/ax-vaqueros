@@ -38,6 +38,8 @@ export interface Order {
   deliveryFee: number
   total: number
   rider?: RiderLocation
+  /** Repartidor asignado (user_id de staff) */
+  riderId?: string
 }
 
 export interface DeliveryMethod {

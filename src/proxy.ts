@@ -3,9 +3,10 @@ import { createServerClient } from '@supabase/ssr'
 import { isSupabaseConfigured } from '@/lib/supabase/config'
 
 const LOGIN = '/admin/login'
+const RIDER_PAGE = '/repartidor'
 
 /**
- * Protege /admin: hace falta una sesión de Supabase de alguien registrado en
+ * Protege /admin y /repartidor: hace falta una sesión de Supabase de alguien registrado en
  * la tabla `staff`. Además renueva la sesión (cookies) en cada visita.
  *
  * Esta es la puerta de la página; los datos los protegen además las reglas
@@ -46,8 +47,16 @@ export async function proxy(request: NextRequest) {
   const userId = data?.claims?.sub
   if (!userId) return redirectKeepingCookies(request, response)
 
-  const { data: staff } = await supabase.from('staff').select('user_id').eq('user_id', userId).maybeSingle()
+  const { data: staff } = await supabase.from('staff').select('role').eq('user_id', userId).maybeSingle()
   if (!staff) return redirectKeepingCookies(request, response, 'sin-acceso')
+
+  // Cada rol a su pantalla: el repartidor no ve el panel completo
+  const isRiderPage = pathname === RIDER_PAGE || pathname.startsWith(`${RIDER_PAGE}/`)
+  if (staff.role === 'rider' && !isRiderPage) {
+    const redirect = NextResponse.redirect(new URL(RIDER_PAGE, request.url))
+    response.cookies.getAll().forEach(cookie => redirect.cookies.set(cookie))
+    return redirect
+  }
 
   return response
 }
@@ -62,5 +71,5 @@ function redirectKeepingCookies(request: NextRequest, from: NextResponse, error?
 }
 
 export const config = {
-  matcher: ['/admin', '/admin/:path*'],
+  matcher: ['/admin', '/admin/:path*', '/repartidor', '/repartidor/:path*'],
 }
