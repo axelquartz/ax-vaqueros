@@ -36,6 +36,9 @@ export interface Order {
   items: OrderItem[]
   subtotal: number
   deliveryFee: number
+  /** Descuento de promoción/cupón ya restado del total */
+  discount?: number
+  promoName?: string
   total: number
   rider?: RiderLocation
   /** Repartidor asignado (user_id de staff) */

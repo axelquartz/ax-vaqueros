@@ -49,6 +49,9 @@ function draftFields({ deliveryMethod, customer, priced }: DraftInput) {
     })),
     subtotal: priced.subtotal,
     delivery_fee: priced.deliveryFee,
+    discount: priced.discount,
+    promo_id: priced.promoId ?? null,
+    promo_name: priced.promoName ?? null,
     total: priced.total,
   }
 }

@@ -154,6 +154,12 @@ export function OrderStatus({ order: baseOrder, justPaid = false }: OrderStatusP
             <span className="text-foreground text-sm font-medium shrink-0">${item.subtotal}</span>
           </div>
         ))}
+        {(order.discount ?? 0) > 0 && (
+          <div className="flex justify-between px-4 py-3 border-t border-border">
+            <span className="text-success text-sm">{order.promoName ?? 'Descuento'}</span>
+            <span className="text-success text-sm">−${order.discount}</span>
+          </div>
+        )}
         {order.deliveryFee > 0 && (
           <div className="flex justify-between px-4 py-3 border-t border-border">
             <span className="text-secondary text-sm">Envío</span>

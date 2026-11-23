@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { priceOrder, PricingError, type OrderLineInput, type PricedOrder } from '@/lib/pricing'
+import { PricingError, type OrderLineInput, type PricedOrder } from '@/lib/pricing'
+import { CouponError } from '@/lib/promotions'
+import { quoteOrder } from '@/lib/quote'
 import { getStoreStatusText, isStoreOpen } from '@/lib/storeHours'
 import { isServerSupabaseConfigured } from '@/lib/supabase/config'
 import { createDraft, updateDraft, type Draft } from '@/lib/orders/serverOrders'
 import { fetchMenuState } from '@/lib/menuStateServer'
-import { applyOverrides } from '@/lib/menuState'
 import { isMercadoPagoConfigured } from '@/lib/mercadopago'
 import type { Customer } from '@/types/order'
 
@@ -30,6 +31,8 @@ export interface CheckoutOrderRequest {
     lng?:         number
   }
   items: OrderLineInput[]
+  /** Cupón escrito por el cliente (opcional) */
+  coupon?: string
   /** Borrador ya creado en esta sesión de checkout */
   draft?: Draft
 }
@@ -37,6 +40,7 @@ export interface CheckoutOrderRequest {
 export interface CheckoutOrderResponse {
   /** Total calculado por el servidor (MXN) */
   amount:       number
+  discount:     number
   folio:        string
   /** Llave privada del pedido para pagarlo y consultarlo (solo con Supabase) */
   accessToken?: string
@@ -99,7 +103,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const { customer, items, deliveryMethod, draft } = body ?? {}
+  const { customer, items, deliveryMethod, draft, coupon } = body ?? {}
   if (typeof customer?.name !== 'string' || typeof customer?.phone !== 'string' ||
       !customer.name.trim() || !customer.phone.trim()) {
     return badRequest('Faltan datos del cliente')
@@ -107,8 +111,9 @@ export async function POST(req: NextRequest) {
 
   let priced: PricedOrder
   try {
-    priced = priceOrder(items, deliveryMethod, applyOverrides(menu.overrides))
+    priced = (await quoteOrder(items, deliveryMethod, typeof coupon === 'string' ? coupon : undefined)).priced
   } catch (err) {
+    if (err instanceof CouponError) return badRequest(err.message)
     if (err instanceof PricingError) return badRequest(err.message)
     throw err
   }
@@ -127,6 +132,7 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json<CheckoutOrderResponse>({
     amount: priced.total,
+    discount: priced.discount,
     folio: saved?.folio ?? demoFolio(),
     accessToken: saved?.accessToken,
     demo: !isMercadoPagoConfigured(),

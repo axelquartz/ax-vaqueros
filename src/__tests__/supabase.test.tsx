@@ -294,6 +294,7 @@ describe('Pedidos en el servidor', () => {
 
 // ── Ruta de pago con Supabase ──────────────────────────────────────────────
 vi.mock('@/lib/menuStateServer', () => ({ fetchMenuState: async () => ({ overrides: [], ordersPaused: false }) }))
+vi.mock('@/lib/promotionsServer', () => ({ fetchPromotions: async () => [] }))
 vi.mock('@/lib/storeHours', () => ({ isStoreOpen: () => true, getStoreStatusText: () => 'Abierto' }))
 import { POST as createIntent } from '@/app/api/checkout/order/route'
 import { POST as payRoute } from '@/app/api/checkout/pay/route'

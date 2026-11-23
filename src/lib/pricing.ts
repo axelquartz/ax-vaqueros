@@ -1,6 +1,7 @@
 import menuData from '@/data/menu.json'
 import ordersData from '@/data/orders.json'
 import type { Product, VariantGroup } from '@/types/menu'
+import type { AppliedPromo } from '@/lib/promotions'
 
 /**
  * Cálculo de precios: única fuente de verdad para totales.
@@ -34,6 +35,10 @@ export interface PricedLine {
 export interface PricedOrder {
   lines:       PricedLine[]
   subtotal:    number
+  /** Descuento de promoción/cupón (solo sobre productos) */
+  discount:    number
+  promoId?:    string
+  promoName?:  string
   deliveryFee: number
   total:       number
 }
@@ -117,12 +122,19 @@ export function getDeliveryFee(deliveryMethod: string): number {
   return method.price
 }
 
-export function priceOrder(items: OrderLineInput[], deliveryMethod: string, catalog: Product[] = products): PricedOrder {
+export function priceOrder(
+  items: OrderLineInput[], deliveryMethod: string, catalog: Product[] = products, promo: AppliedPromo | null = null,
+): PricedOrder {
   if (!Array.isArray(items) || items.length === 0) throw new PricingError('El pedido está vacío')
   if (items.length > MAX_LINES) throw new PricingError('Demasiados productos en un pedido')
 
   const lines = items.map(item => priceLine(item, catalog))
   const subtotal = lines.reduce((sum, l) => sum + l.subtotal, 0)
   const deliveryFee = getDeliveryFee(deliveryMethod)
-  return { lines, subtotal, deliveryFee, total: subtotal + deliveryFee }
+  const discount = Math.min(promo?.discount ?? 0, subtotal)
+  return {
+    lines, subtotal, discount, deliveryFee,
+    ...(discount > 0 && promo ? { promoId: promo.id, promoName: promo.name } : {}),
+    total: subtotal - discount + deliveryFee,
+  }
 }

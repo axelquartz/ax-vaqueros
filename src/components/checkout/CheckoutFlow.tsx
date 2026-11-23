@@ -110,7 +110,47 @@ function StepIndicator({ current }: { current: StepId }) {
 }
 
 // ─── Step 1: Resumen ──────────────────────────────────────
-function StepReview({ onNext, upsell }: { onNext: () => void; upsell?: React.ReactNode }) {
+interface PromoView {
+  discount: number
+  promoName: string | null
+  /** Cupón aplicado (vacío si no hay) */
+  coupon: string
+  couponError: string | null
+  onApply: (code: string) => void
+  onRemove: () => void
+  onTyping: () => void
+}
+
+function CouponBox({ promo }: { promo: PromoView }) {
+  const [code, setCode] = useState('')
+  if (promo.coupon && promo.discount > 0) {
+    return (
+      <div className="flex items-center justify-between gap-3 text-sm px-4 py-3 border-t border-border-subtle">
+        <span className="text-success">✓ Cupón {promo.coupon} aplicado</span>
+        <button type="button" onClick={promo.onRemove} className="text-muted hover:text-foreground min-h-10 px-2">Quitar</button>
+      </div>
+    )
+  }
+  return (
+    <form
+      onSubmit={e => { e.preventDefault(); if (code.trim()) promo.onApply(code) }}
+      className="px-4 py-3 border-t border-border-subtle space-y-2"
+    >
+      <label htmlFor="coupon" className="text-secondary text-sm">¿Tienes un cupón?</label>
+      <div className="flex gap-2">
+        <input
+          id="coupon" value={code} autoCapitalize="characters" autoComplete="off" placeholder="Escribe tu código"
+          onChange={e => { setCode(e.target.value); promo.onTyping() }}
+          className="min-h-11 flex-1 min-w-0 rounded-lg border border-border bg-elevated px-3 text-foreground text-sm uppercase"
+        />
+        <Button type="submit" variant="ghost" disabled={!code.trim()}>Aplicar</Button>
+      </div>
+      {promo.couponError && <p role="alert" className="text-error text-xs">{promo.couponError}</p>}
+    </form>
+  )
+}
+
+function StepReview({ onNext, upsell, promo }: { onNext: () => void; upsell?: React.ReactNode; promo: PromoView }) {
   const { items, total, updateQuantity } = useCart()
   const [open, setOpen]         = useState(true)
   const [statusText, setStatus] = useState('')
@@ -158,6 +198,13 @@ function StepReview({ onNext, upsell }: { onNext: () => void; upsell?: React.Rea
           <span className="text-secondary text-sm">Subtotal</span>
           <span className="text-foreground text-sm font-semibold">${total}</span>
         </div>
+        {promo.discount > 0 && (
+          <div className="flex justify-between px-4 py-3 bg-elevated border-t border-border-subtle">
+            <span className="text-success text-sm">{promo.promoName ?? 'Descuento'}</span>
+            <span className="text-success text-sm font-semibold">−${promo.discount}</span>
+          </div>
+        )}
+        <CouponBox promo={promo} />
       </div>
       {/* "¿Te falta algo?" mientras todavía arma su pedido: así el total ya es
           el final al llegar al pago (no hay que recalcular el cobro) */}
@@ -264,6 +311,8 @@ function toSavedItems(items: CartItem[]) {
 
 interface PaymentFormProps {
   total: number
+  discount: number
+  promoName: string | null
   deliveryFee: number
   folio: string
   /** Llave privada del pedido guardado (con Supabase) */
@@ -273,13 +322,19 @@ interface PaymentFormProps {
   onPaid: (result?: { pending: boolean }) => void | Promise<void>
 }
 
-function Breakdown({ total, deliveryFee }: { total: number; deliveryFee: number }) {
+function Breakdown({ total, discount, promoName, deliveryFee }: { total: number; discount: number; promoName: string | null; deliveryFee: number }) {
   return (
     <div className="bg-surface border border-border rounded-xl px-4 py-3 space-y-2">
       <div className="flex justify-between text-sm">
         <span className="text-secondary">Subtotal</span>
         <span className="text-foreground">${total}</span>
       </div>
+      {discount > 0 && (
+        <div className="flex justify-between text-sm">
+          <span className="text-success">{promoName ?? 'Descuento'}</span>
+          <span className="text-success">−${discount}</span>
+        </div>
+      )}
       {deliveryFee > 0 && (
         <div className="flex justify-between text-sm">
           <span className="text-secondary">Envío</span>
@@ -288,16 +343,16 @@ function Breakdown({ total, deliveryFee }: { total: number; deliveryFee: number 
       )}
       <div className="flex justify-between font-semibold border-t border-border pt-2">
         <span className="text-foreground">Total</span>
-        <span className="text-foreground">${total + deliveryFee}</span>
+        <span className="text-foreground">${total - discount + deliveryFee}</span>
       </div>
     </div>
   )
 }
 
 // ─── Step 4: Pago demo (sin Mercado Pago) ────────────────
-function DemoPaymentForm({ total, deliveryFee, onBack, onPaid }: PaymentFormProps) {
+function DemoPaymentForm({ total, discount, promoName, deliveryFee, onBack, onPaid }: PaymentFormProps) {
   const [submitting, setSubmitting] = useState(false)
-  const orderTotal = total + deliveryFee
+  const orderTotal = total - discount + deliveryFee
 
   const handlePay = async () => {
     setSubmitting(true)
@@ -336,7 +391,7 @@ function DemoPaymentForm({ total, deliveryFee, onBack, onPaid }: PaymentFormProp
       </div>
 
 
-      <Breakdown total={total} deliveryFee={deliveryFee} />
+      <Breakdown total={total} discount={discount} promoName={promoName} deliveryFee={deliveryFee} />
 
       <div className="flex gap-3">
         <Button variant="ghost" onClick={onBack} disabled={submitting} className="flex-1">Atrás</Button>
@@ -349,10 +404,10 @@ function DemoPaymentForm({ total, deliveryFee, onBack, onPaid }: PaymentFormProp
 }
 
 // ─── Step 4: Pago con Mercado Pago ───────────────────────
-function PaymentForm({ total, deliveryFee, folio, accessToken, onBack, onPaid }: PaymentFormProps) {
+function PaymentForm({ total, discount, promoName, deliveryFee, folio, accessToken, onBack, onPaid }: PaymentFormProps) {
   const [error, setError] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
-  const orderTotal = total + deliveryFee
+  const orderTotal = total - discount + deliveryFee
 
   // El Brick llama a esto con la tarjeta tokenizada (los datos de la tarjeta
   // nunca pasan por nuestro servidor). Rechazar la promesa le indica al Brick
@@ -379,7 +434,7 @@ function PaymentForm({ total, deliveryFee, folio, accessToken, onBack, onPaid }:
         <p className="text-muted text-sm mt-1.5">Pago seguro con Mercado Pago</p>
       </div>
 
-      <Breakdown total={total} deliveryFee={deliveryFee} />
+      <Breakdown total={total} discount={discount} promoName={promoName} deliveryFee={deliveryFee} />
 
       {!ready && <p className="text-muted text-sm px-1">Cargando formulario de pago…</p>}
       <div className="rounded-xl overflow-hidden">
@@ -424,11 +479,37 @@ export function CheckoutFlow() {
   const [creatingIntent, setCreatingIntent] = useState(false)
   const [intentAmount, setIntentAmount] = useState<number | null>(null)
   const [sheetProduct, setSheetProduct] = useState<Product | null>(null)
+  // Promoción automática o cupón: el servidor decide el descuento, aquí solo se muestra
+  const [coupon, setCoupon]           = useState('')
+  const [couponError, setCouponError] = useState<string | null>(null)
+  const [discount, setDiscount]       = useState(0)
+  const [promoName, setPromoName]     = useState<string | null>(null)
   /** Pago hecho: mientras se abre la confirmación, no volver a pintar el pago con el carrito vacío */
   const [leaving, setLeaving]         = useState(false)
 
   const selectedMethod = ordersData.deliveryMethods.find(m => m.id === deliveryMethod)!
-  const orderTotal = total + selectedMethod.price
+  const orderTotal = total - discount + selectedMethod.price
+
+  const cartKey = JSON.stringify(items.map(i => [i.productId, i.quantity, i.selectedVariants]))
+  useEffect(() => {
+    if (items.length === 0 || leaving) return
+    const ctrl = new AbortController()
+    fetch('/api/checkout/quote', {
+      method: 'POST', signal: ctrl.signal, headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        deliveryMethod, coupon: coupon || undefined,
+        items: items.map(i => ({ productId: i.productId, quantity: i.quantity, selectedVariants: i.selectedVariants })),
+      }),
+    })
+      .then(async r => ({ ok: r.ok, data: await r.json() }))
+      .then(({ ok, data }) => {
+        if (ok) { setDiscount(data.discount ?? 0); setPromoName(data.promoName ?? null); return }
+        if (data.coupon) { setCouponError(data.error); setCoupon('') }
+      })
+      .catch(() => { /* sin red: el servidor igual recalcula al cobrar */ })
+    return () => ctrl.abort()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartKey, deliveryMethod, coupon, leaving])
 
   const patchField = (key: keyof FormState) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -521,6 +602,7 @@ export function CheckoutFlow() {
             notes:       form.notes       || undefined,
             ...(deliveryMethod === 'delivery' && coords ? coords : {}),
           },
+          coupon: coupon || undefined,
           items: items.map(i => ({
             productId:        i.productId,
             quantity:         i.quantity,
@@ -566,6 +648,8 @@ export function CheckoutFlow() {
       })),
       subtotal:    total,
       deliveryFee: selectedMethod.price,
+      discount:    discount || undefined,
+      promoName:   promoName ?? undefined,
       total:       orderTotal,
     }
 
@@ -614,7 +698,16 @@ export function CheckoutFlow() {
       {/* key={step} re-monta el contenido y dispara la transición en cada paso */}
       <div key={step} className="animate-fade-up">
         {step === 'review' && (
-          <StepReview onNext={() => setStep('delivery')} upsell={upsell} />
+          <StepReview
+            onNext={() => setStep('delivery')}
+            upsell={upsell}
+            promo={{
+              discount, promoName, coupon, couponError,
+              onApply: code => { setCouponError(null); setCoupon(code.trim().toUpperCase()) },
+              onRemove: () => { setCoupon(''); setCouponError(null) },
+              onTyping: () => setCouponError(null),
+            }}
+          />
         )}
         {step === 'delivery' && (
           <StepDelivery
@@ -646,6 +739,8 @@ export function CheckoutFlow() {
           isDemoMode ? (
             <DemoPaymentForm
               total={total}
+              discount={discount}
+              promoName={promoName}
               deliveryFee={selectedMethod.price}
               folio={folio}
               onBack={() => setStep('customer')}
@@ -656,6 +751,8 @@ export function CheckoutFlow() {
               // Nuevo formulario si cambia el pedido (folio o total)
               key={`${folio}-${intentAmount}`}
               total={total}
+              discount={discount}
+              promoName={promoName}
               deliveryFee={selectedMethod.price}
               folio={folio}
               accessToken={accessToken}

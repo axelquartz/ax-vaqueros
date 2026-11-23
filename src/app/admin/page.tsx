@@ -23,6 +23,7 @@ export default function AdminPage() {
           </div>
           <div className="flex items-center gap-1">
             {online && <Link href="/admin/menu" className="min-h-10 px-3 inline-flex items-center text-sm text-muted hover:text-foreground transition-colors">Menú</Link>}
+            {online && <Link href="/admin/promos" className="min-h-10 px-3 inline-flex items-center text-sm text-muted hover:text-foreground transition-colors">Promos</Link>}
             {online && <LogoutButton />}
           </div>
         </div>
