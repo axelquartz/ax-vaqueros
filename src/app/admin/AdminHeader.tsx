@@ -9,13 +9,14 @@ const LINKS = [
   { href: '/admin', label: 'Pedidos' },
   { href: '/admin/menu', label: 'Menú' },
   { href: '/admin/promos', label: 'Promos' },
+  { href: '/admin/qr', label: 'QR' },
 ]
 
 /** Barra común del panel: las tres secciones siempre a un toque, sin botón de regreso */
 export function AdminHeader({ online = true }: { online?: boolean }) {
   const pathname = usePathname()
   return (
-    <header className="border-b border-border">
+    <header className="border-b border-border print:hidden">
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-2">
         <div className="flex items-center gap-3 min-w-0">
           <Logo variant="small" className="h-7 shrink-0" />
@@ -30,7 +31,7 @@ export function AdminHeader({ online = true }: { online?: boolean }) {
                     href={l.href}
                     aria-current={active ? 'page' : undefined}
                     className={[
-                      'min-h-10 px-2.5 sm:px-3 inline-flex items-center rounded-lg text-sm transition-colors',
+                      'min-h-10 px-2 sm:px-3 inline-flex items-center rounded-lg text-sm transition-colors',
                       active ? 'text-foreground font-semibold bg-elevated' : 'text-muted hover:text-foreground',
                     ].join(' ')}
                   >
