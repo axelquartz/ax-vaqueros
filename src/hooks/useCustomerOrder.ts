@@ -7,6 +7,8 @@ import { isActive } from '@/lib/orders/status'
 import type { Order } from '@/types/order'
 
 export const POLL_MS = 10_000
+/** Envío en camino: más seguido para que el repartidor se mueva fluido */
+export const POLL_ON_THE_WAY_MS = 5_000
 
 export type CustomerOrderState =
   | { state: 'idle' }                       // sin Supabase o sin llave en este dispositivo
@@ -32,6 +34,7 @@ export function useCustomerOrder(folio: string, enabled: boolean): CustomerOrder
     if (!token) return
     let timer: ReturnType<typeof setTimeout> | undefined
     let stopped = false
+    let onTheWay = false
     const set = (value: CustomerOrderState) => { if (!stopped) setResult({ key, value }) }
 
     const poll = async () => {
@@ -45,11 +48,12 @@ export function useCustomerOrder(folio: string, enabled: boolean): CustomerOrder
           const data = (await res.json()) as CustomerOrderResponse
           set({ state: data.paid ? 'paid' : 'unpaid', order: data.order })
           if (data.paid && !isActive(data.order.status)) return // terminado: no seguir consultando
+          onTheWay = data.order.deliveryMethod === 'delivery' && data.order.status === 'ready'
         }
       } catch {
         // Sin conexión: se reintenta en el siguiente ciclo
       }
-      if (!stopped) timer = setTimeout(poll, POLL_MS)
+      if (!stopped) timer = setTimeout(poll, onTheWay ? POLL_ON_THE_WAY_MS : POLL_MS)
     }
 
     void poll()

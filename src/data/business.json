@@ -1,12 +1,12 @@
 {
   "name": "Vaquero's",
-  "tagline": "Las mejores alitas de Monterrey",
+  "tagline": "Las mejores alitas de Zapopan",
   "description": "Somos un restaurante familiar dedicado a ofrecerte la experiencia de sabores auténticos en cada visita. Desde nuestras alitas y boneless en más de 10 sabores, hasta nuestras banderillas y tostilocos, todo está hecho con ingredientes frescos y mucho amor. Nos enorgullece ser el lugar favorito de familias y amigos que buscan un ambiente relajado y una comida que nunca decepciona.",
   "founded": "2018",
-  "address": "Calle Principal 123, Col. Centro, Monterrey, N.L.",
+  "address": "Av. Santa Margarita 81, Col. Santa Margarita, Zapopan, Jal.",
   "phone": "+52 81 1234 5678",
   "whatsapp": "528112345678",
-  "coords": { "lat": 25.6866, "lng": -100.3161 },
+  "coords": { "lat": 20.7302, "lng": -103.4222 },
   "social": {
     "instagram": "https://instagram.com/vaqueros_mty",
     "facebook":  "https://facebook.com/vaquerosmty",

@@ -507,6 +507,7 @@ export function CheckoutFlow() {
             address:     form.address     || undefined,
             tableNumber: form.tableNumber || undefined,
             notes:       form.notes       || undefined,
+            ...(deliveryMethod === 'delivery' && coords ? coords : {}),
           },
           items: items.map(i => ({
             productId:        i.productId,
@@ -541,6 +542,7 @@ export function CheckoutFlow() {
         address:     deliveryMethod === 'delivery' ? form.address.trim() : undefined,
         tableNumber: deliveryMethod === 'table' ? form.tableNumber.trim() : undefined,
         notes:       form.notes.trim(),
+        ...(deliveryMethod === 'delivery' && coords ? coords : {}),
       },
       items: items.map(i => ({
         productId: i.productId,

@@ -23,6 +23,9 @@ export interface CheckoutOrderRequest {
     address?:     string
     tableNumber?: string
     notes?:       string
+    /** Punto elegido en el mapa (solo domicilio) */
+    lat?:         number
+    lng?:         number
   }
   items: OrderLineInput[]
   /** Borrador ya creado en esta sesión de checkout */
@@ -43,8 +46,17 @@ function badRequest(error: string) {
   return NextResponse.json({ error }, { status: 400 })
 }
 
+/** Coordenadas dentro de México; cualquier otra cosa se descarta */
+function cleanCoords(c: CheckoutOrderRequest['customer']): { lat?: number; lng?: number } {
+  const { lat, lng } = c
+  if (typeof lat !== 'number' || typeof lng !== 'number' || !Number.isFinite(lat) || !Number.isFinite(lng)) return {}
+  if (lat < 14 || lat > 33 || lng < -119 || lng > -86) return {}
+  return { lat: Math.round(lat * 1e6) / 1e6, lng: Math.round(lng * 1e6) / 1e6 }
+}
+
 function cleanCustomer(c: CheckoutOrderRequest['customer'], deliveryMethod: string): Customer {
   return {
+    ...(deliveryMethod === 'delivery' ? cleanCoords(c) : {}),
     name:        c.name.trim().slice(0, 80),
     phone:       c.phone.trim().slice(0, 30),
     address:     deliveryMethod === 'delivery' ? c.address?.trim().slice(0, 200) : undefined,

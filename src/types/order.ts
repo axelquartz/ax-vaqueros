@@ -13,6 +13,17 @@ export interface Customer {
   address?: string
   tableNumber?: string
   notes: string
+  /** Punto elegido en el mapa del checkout (solo domicilio) */
+  lat?: number
+  lng?: number
+}
+
+/** Última ubicación del repartidor (solo mientras el pedido va en camino) */
+export interface RiderLocation {
+  lat: number
+  lng: number
+  /** Cuándo se tomó (ISO) */
+  at: string
 }
 
 export interface Order {
@@ -26,6 +37,7 @@ export interface Order {
   subtotal: number
   deliveryFee: number
   total: number
+  rider?: RiderLocation
 }
 
 export interface DeliveryMethod {

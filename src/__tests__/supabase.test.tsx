@@ -329,6 +329,19 @@ describe('API con Supabase', () => {
     expect((insert.customer as { address?: string }).address).toBeUndefined() // solo domicilio guarda dirección
   })
 
+  it('domicilio: guarda el punto del mapa solo si está en México', async () => {
+    onlineEnv()
+    const insertOf = async (customer: Record<string, unknown>) => {
+      const f = fakeDb(() => ({ data: { id: 'ORD-12345', access_token: TOKEN }, error: null }))
+      server.db = f.db
+      await post({ ...body, deliveryMethod: 'delivery', customer: { ...body.customer, ...customer } })
+      return (f.calls[0].ops.find(([o]) => o === 'insert')![1][0] as { customer: Record<string, unknown> }).customer
+    }
+    expect(await insertOf({ lat: 20.7302, lng: -103.4222 })).toMatchObject({ lat: 20.7302, lng: -103.4222 })
+    expect(await insertOf({ lat: 48.85, lng: 2.35 })).not.toHaveProperty('lat')
+    expect(await insertOf({ lat: '20', lng: '-103' })).not.toHaveProperty('lat')
+  })
+
   it('si el folio ya existe, prueba con otro', async () => {
     onlineEnv()
     let attempt = 0

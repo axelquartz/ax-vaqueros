@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/Button'
 import ordersData from '@/data/orders.json'
 import { ACTION_LABEL, URGENT_AFTER_MIN, canCancel, isActive, nextStatus, statusLabel, type OrderStatusId } from '@/lib/orders/status'
 import type { Order } from '@/types/order'
+import { isSupabaseConfigured } from '@/lib/supabase/config'
+import { RiderShare } from './RiderShare'
 
 export function minutesSince(iso: string, now: number): number {
   return Math.max(0, Math.floor((now - new Date(iso).getTime()) / 60_000))
@@ -15,6 +17,13 @@ export function formatElapsed(min: number): string {
   if (min < 60) return `Hace ${min} min`
   const h = Math.floor(min / 60)
   return `Hace ${h} h ${min % 60} min`
+}
+
+/** Ruta en Google Maps hacia el cliente (punto del mapa, o la dirección escrita) */
+function directionsUrl(order: Order): string {
+  const { lat, lng, address } = order.customer
+  const destination = lat != null && lng != null ? `${lat},${lng}` : address ?? ''
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`
 }
 
 interface OrderCardProps {
@@ -56,6 +65,16 @@ export function OrderCard({ order, now, isNew = false, onAdvance, onCancel }: Or
             )}
             {destination}
           </p>
+          {order.deliveryMethod === 'delivery' && (order.customer.lat != null || order.customer.address) && (
+            <a
+              href={directionsUrl(order)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-1 text-brand text-xs font-medium hover:text-brand-light transition-colors"
+            >
+              Cómo llegar ↗
+            </a>
+          )}
         </div>
         <div className="text-right shrink-0">
           {isNew && <p className="text-brand text-xs font-semibold">Nuevo</p>}
@@ -97,6 +116,11 @@ export function OrderCard({ order, now, isNew = false, onAdvance, onCancel }: Or
         <p className="mx-4 mt-3 rounded-lg bg-warning/10 border border-warning/25 px-3 py-2 text-warning text-sm">
           {order.customer.notes}
         </p>
+      )}
+
+      {/* Repartidor: compartir GPS con el cliente mientras va en camino */}
+      {order.deliveryMethod === 'delivery' && order.status === 'ready' && isSupabaseConfigured() && (
+        <RiderShare orderId={order.id} />
       )}
 
       {/* Total + acciones */}
