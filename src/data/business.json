@@ -6,11 +6,15 @@
   "address": "Av. Santa Margarita 81, Col. Santa Margarita, Zapopan, Jal.",
   "phone": "+52 81 1234 5678",
   "whatsapp": "528112345678",
-  "coords": { "lat": 20.7313, "lng": -103.4079 },
+  "googleReviewUrl": "",
+  "coords": {
+    "lat": 20.7313,
+    "lng": -103.4079
+  },
   "social": {
     "instagram": "https://instagram.com/vaqueros_mty",
-    "facebook":  "https://facebook.com/vaquerosmty",
-    "tiktok":    "https://tiktok.com/@vaqueros_mty"
+    "facebook": "https://facebook.com/vaquerosmty",
+    "tiktok": "https://tiktok.com/@vaqueros_mty"
   },
   "gallery": [
     "https://placehold.co/600x400/1a1a1a/C9A96E?text=Alitas",

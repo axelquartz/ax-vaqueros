@@ -28,24 +28,29 @@ const CheckoutMap = dynamic(
 const MP_PUBLIC_KEY = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY
 if (typeof window !== 'undefined' && MP_PUBLIC_KEY) initMercadoPago(MP_PUBLIC_KEY, { locale: 'es-MX' })
 
-/** Formulario de tarjeta con la paleta de la marca (tema oscuro) */
+/**
+ * Formulario de tarjeta. Los campos de número/vencimiento/CVV son iframes de
+ * Mercado Pago que pintan fondo claro aunque el tema sea oscuro, y con texto
+ * claro no se lee lo que se escribe. Por eso va en tema claro con texto oscuro
+ * explícito (legible en cualquier caso), con la marca solo en acentos y botón.
+ */
 const mpCustomization = {
   paymentMethods: { maxInstallments: 1 },
   visual: {
     style: {
-      theme: 'dark' as const,
+      theme: 'default' as const,
       customVariables: {
         baseColor:            '#C49B6C',
         baseColorFirstVariant: '#B08758',
         baseColorSecondVariant: '#9A7448',
-        formBackgroundColor:  '#1D1814',
-        inputBackgroundColor: '#28211B',
-        textPrimaryColor:     '#F2EADD',
-        textSecondaryColor:   '#B4A691',
-        outlinePrimaryColor:  '#352D25',
+        formBackgroundColor:  '#FFFFFF',
+        inputBackgroundColor: '#F4F1EC',
+        textPrimaryColor:     '#14100D',
+        textSecondaryColor:   '#5C5246',
+        outlinePrimaryColor:  '#D9D2C7',
         outlineSecondaryColor: '#C49B6C',
         buttonTextColor:      '#14100D',
-        errorColor:           '#DE6A55',
+        errorColor:           '#C0392B',
         borderRadiusMedium:   '12px',
         borderRadiusLarge:    '12px',
       },

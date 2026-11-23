@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { StatusTracker } from './StatusTracker'
+import { ReviewCard } from './ReviewCard'
 import { FolioActions } from './FolioActions'
 import { PaymentSuccess } from './PaymentSuccess'
 import { findOrder } from '@/lib/orderHistory'
@@ -118,6 +119,8 @@ export function OrderStatus({ order: baseOrder, justPaid = false }: OrderStatusP
           Estamos confirmando tu pago. Esta pantalla se actualiza sola.
         </p>
       )}
+
+      {online && order.status === 'delivered' && <ReviewCard folio={order.id} />}
 
       {/* Guardar folio */}
       <FolioActions folio={order.id} />
