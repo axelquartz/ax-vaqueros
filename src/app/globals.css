@@ -154,3 +154,8 @@ body {
 #cardPaymentBrick_container iframe {
   color-scheme: light;
 }
+
+/* Mapas: mosaicos claros de OpenStreetMap convertidos a la paleta oscura */
+.map-tiles-dark {
+  filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.85) saturate(0.5) sepia(0.15);
+}

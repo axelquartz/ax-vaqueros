@@ -1,8 +1,10 @@
 import L from 'leaflet'
 
-const TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-const ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
+// Mosaicos estándar de OpenStreetMap (gratis, sin llave; uso ligero con atribución).
+// CARTO dark_all empezó a exigir API key (nov 2026). El tema oscuro se logra
+// con un filtro CSS sobre los mosaicos (.map-tiles-dark en globals.css).
+const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+const ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 
 /**
  * Crea un mapa Leaflet con el estilo oscuro de la marca.
@@ -16,7 +18,7 @@ const ATTRIBUTION =
  */
 export function createDarkMap(el: HTMLElement, center: L.LatLngExpression, zoom: number): L.Map {
   const map = L.map(el, { center, zoom, scrollWheelZoom: false, zoomControl: false })
-  L.tileLayer(TILE_URL, { attribution: ATTRIBUTION }).addTo(map)
+  L.tileLayer(TILE_URL, { attribution: ATTRIBUTION, maxZoom: 19, className: 'map-tiles-dark' }).addTo(map)
   return map
 }
 

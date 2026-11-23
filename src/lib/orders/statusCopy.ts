@@ -27,7 +27,7 @@ export function statusCopy(status: string, deliveryMethod: string): StatusCopy {
 }
 
 /** "12:31 p.m." en la zona del restaurante */
-export function formatStatusTime(iso: string, timeZone = 'America/Monterrey'): string {
+export function formatStatusTime(iso: string, timeZone = 'America/Mexico_City'): string {
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return ''
   return date.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit', timeZone })

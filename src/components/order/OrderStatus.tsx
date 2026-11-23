@@ -72,8 +72,9 @@ export function OrderStatus({ order: baseOrder, justPaid = false }: OrderStatusP
   const deliveryMethod = ordersData.deliveryMethods.find(m => m.id === order.deliveryMethod)
   const isDelivery     = order.deliveryMethod === 'delivery'
 
-  // Mostrar mapa cuando el pedido está en camino o listo (solo domicilio)
-  const showMap = isDelivery && ['preparing', 'ready', 'delivered'].includes(order.status)
+  // Mapa de seguimiento (solo domicilio): desde que se prepara hasta que llega
+  const showMap = isDelivery && ['preparing', 'ready'].includes(order.status)
+  const { lat, lng } = order.customer
 
   return (
     <div className="max-w-md mx-auto px-4 py-6 space-y-4">
@@ -130,7 +131,14 @@ export function OrderStatus({ order: baseOrder, justPaid = false }: OrderStatusP
       />
 
       {/* Mapa de seguimiento (solo domicilio en tránsito) */}
-      {showMap && <OrderMap />}
+      {showMap && (
+        <OrderMap
+          destination={lat != null && lng != null ? { lat, lng } : undefined}
+          rider={order.rider}
+          onTheWay={order.status === 'ready'}
+          simulate={!online}
+        />
+      )}
 
       {/* Desglose del pedido */}
       {order.items.length > 0 && (

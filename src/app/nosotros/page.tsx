@@ -6,8 +6,8 @@ import hoursData from '@/data/hours.json'
 import Link from 'next/link'
 import { Logo } from '@/components/brand/Logo'
 
-const CheckoutMap = dynamic(
-  () => import('@/components/checkout/CheckoutMap').then(m => m.CheckoutMap),
+const LocationMap = dynamic(
+  () => import('@/components/maps/LocationMap').then(m => m.LocationMap),
   { ssr: false }
 )
 
@@ -129,7 +129,7 @@ export default function NosotrosPage() {
           <h2 className="font-display text-[1.625rem] font-bold leading-none text-foreground">¿Dónde estamos?</h2>
           <p className="text-secondary text-xs">{businessData.address}</p>
           <div className="rounded-2xl overflow-hidden border border-border h-56 sm:h-72">
-            <CheckoutMap lat={coords.lat} lng={coords.lng} />
+            <LocationMap lat={coords.lat} lng={coords.lng} />
           </div>
           <a
             href={`https://maps.google.com/?q=${coords.lat},${coords.lng}`}
