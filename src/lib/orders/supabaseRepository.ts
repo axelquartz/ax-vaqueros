@@ -46,14 +46,20 @@ export function createSupabaseOrderRepository(
       console.error('Supabase load error:', error)
       return
     }
-    // Lo que llegó por Realtime durante la carga gana (es más reciente)
-    const live = new Map(orders.map(o => [o.id, o]))
-    orders = sorted([...(data as OrderRow[]).map(rowToOrder).filter(o => !live.has(o.id)), ...live.values()])
+    // Por pedido gana la versión más reciente: lo que llegó por Realtime durante
+    // la carga, o lo que acaba de leerse (si Realtime se perdió un cambio)
+    const merged = new Map(orders.map(o => [o.id, o]))
+    for (const fetched of (data as OrderRow[]).map(rowToOrder)) {
+      const mine = merged.get(fetched.id)
+      if (!mine || fetched.updatedAt >= mine.updatedAt) merged.set(fetched.id, fetched)
+    }
+    orders = sorted([...merged.values()])
     loaded = true
     notify()
   }
 
   const RETRY_MS = 5_000
+  const POLL_MS = 20_000
 
   function connect() {
     const channel = db
@@ -86,6 +92,11 @@ export function createSupabaseOrderRepository(
         if (document.visibilityState === 'visible') void load()
       })
       window.addEventListener('online', () => void load())
+      // Red de seguridad: si Realtime se queda mudo sin avisar (socket zombi,
+      // eventos que no llegan), el panel se pone al día solo cada 20 s
+      setInterval(() => {
+        if (document.visibilityState === 'visible') void load()
+      }, POLL_MS)
     }
   }
 

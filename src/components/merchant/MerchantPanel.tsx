@@ -6,8 +6,12 @@ import { useOrders } from '@/hooks/useOrders'
 import { clearRepositoryError, getOrderRepository, getRepositoryError, subscribeRepositoryError } from '@/lib/orders/repository'
 import { ACTIVE_STATUSES, statusLabel, type OrderStatusId } from '@/lib/orders/status'
 import { OrderCard } from './OrderCard'
+import dynamic from 'next/dynamic'
 import { useRiders } from '@/hooks/useRiders'
 import type { Order } from '@/types/order'
+
+// Leaflet toca `window`: el mapa solo se carga en el navegador
+const LiveRidersMap = dynamic(() => import('./LiveRidersMap').then(m => m.LiveRidersMap), { ssr: false })
 
 type Tab = 'active' | 'delivered' | 'cancelled'
 
@@ -88,6 +92,7 @@ export function MerchantPanel() {
   const dayStart  = useMemo(() => { const d = new Date(now); d.setHours(0, 0, 0, 0); return d.toISOString() }, [now])
   const delivered = useMemo(() => orders.filter(o => o.status === 'delivered' && o.updatedAt >= dayStart).sort(byNewest), [orders, dayStart])
   const cancelled = useMemo(() => orders.filter(o => o.status === 'cancelled' && o.updatedAt >= dayStart).sort(byNewest), [orders, dayStart])
+  const onTheWay = useMemo(() => orders.filter(o => o.deliveryMethod === 'delivery' && o.status === 'ready'), [orders])
   const pendingCount = active.filter(o => o.status === 'pending').length
   const counts: Record<Tab, number> = { active: active.length, delivered: delivered.length, cancelled: cancelled.length }
 
@@ -149,6 +154,8 @@ export function MerchantPanel() {
           {soundOn ? 'Sonido activado' : 'Activar sonido'}
         </button>
       </div>
+
+      {onTheWay.length > 0 && <LiveRidersMap orders={onTheWay} riders={riders} now={now} />}
 
       {/* Pestañas */}
       <div role="tablist" aria-label="Estado de los pedidos" className="flex gap-1 p-1 bg-surface border border-border rounded-full w-fit max-w-full overflow-x-auto no-scrollbar">
