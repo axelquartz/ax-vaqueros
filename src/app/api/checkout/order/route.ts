@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PricingError, type OrderLineInput, type PricedOrder } from '@/lib/pricing'
 import { CouponError } from '@/lib/promotions'
-import { quoteOrder } from '@/lib/quote'
+import { DeliveryZoneError, quoteOrder } from '@/lib/quote'
+import { validPoint } from '@/lib/deliveryZones'
 import { getStoreStatusText, isStoreOpen } from '@/lib/storeHours'
 import { isServerSupabaseConfigured } from '@/lib/supabase/config'
 import { createDraft, updateDraft, type Draft } from '@/lib/orders/serverOrders'
@@ -40,6 +41,7 @@ export interface CheckoutOrderRequest {
 export interface CheckoutOrderResponse {
   /** Total calculado por el servidor (MXN) */
   amount:       number
+  deliveryFee:  number
   discount:     number
   folio:        string
   /** Llave privada del pedido para pagarlo y consultarlo (solo con Supabase) */
@@ -111,9 +113,13 @@ export async function POST(req: NextRequest) {
 
   let priced: PricedOrder
   try {
-    priced = (await quoteOrder(items, deliveryMethod, typeof coupon === 'string' ? coupon : undefined)).priced
+    priced = (await quoteOrder(
+      items, deliveryMethod, typeof coupon === 'string' ? coupon : undefined,
+      validPoint(customer.lat, customer.lng), { strict: true },
+    )).priced
   } catch (err) {
     if (err instanceof CouponError) return badRequest(err.message)
+    if (err instanceof DeliveryZoneError) return badRequest(err.message)
     if (err instanceof PricingError) return badRequest(err.message)
     throw err
   }
@@ -132,6 +138,7 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json<CheckoutOrderResponse>({
     amount: priced.total,
+    deliveryFee: priced.deliveryFee,
     discount: priced.discount,
     folio: saved?.folio ?? demoFolio(),
     accessToken: saved?.accessToken,

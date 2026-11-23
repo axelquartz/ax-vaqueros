@@ -295,6 +295,7 @@ describe('Pedidos en el servidor', () => {
 // ── Ruta de pago con Supabase ──────────────────────────────────────────────
 vi.mock('@/lib/menuStateServer', () => ({ fetchMenuState: async () => ({ overrides: [], ordersPaused: false }) }))
 vi.mock('@/lib/promotionsServer', () => ({ fetchPromotions: async () => [] }))
+vi.mock('@/lib/deliveryZonesServer', () => ({ fetchDeliveryTiers: async () => [{ km: 8, fee: 45 }] }))
 vi.mock('@/components/order/ReviewCard', () => ({ ReviewCard: () => null }))
 vi.mock('@/lib/storeHours', () => ({ isStoreOpen: () => true, getStoreStatusText: () => 'Abierto' }))
 import { POST as createIntent } from '@/app/api/checkout/order/route'
@@ -332,7 +333,7 @@ describe('API con Supabase', () => {
     expect((insert.customer as { address?: string }).address).toBeUndefined() // solo domicilio guarda dirección
   })
 
-  it('domicilio: guarda el punto del mapa solo si está en México', async () => {
+  it('domicilio: exige un punto del mapa dentro de México', async () => {
     onlineEnv()
     const insertOf = async (customer: Record<string, unknown>) => {
       const f = fakeDb(() => ({ data: { id: 'ORD-12345', access_token: TOKEN }, error: null }))
@@ -341,8 +342,14 @@ describe('API con Supabase', () => {
       return (f.calls[0].ops.find(([o]) => o === 'insert')![1][0] as { customer: Record<string, unknown> }).customer
     }
     expect(await insertOf({ lat: 20.7302, lng: -103.4222 })).toMatchObject({ lat: 20.7302, lng: -103.4222 })
-    expect(await insertOf({ lat: 48.85, lng: 2.35 })).not.toHaveProperty('lat')
-    expect(await insertOf({ lat: '20', lng: '-103' })).not.toHaveProperty('lat')
+    // Sin punto válido en México no hay forma de calcular el envío: se rechaza y no se guarda nada
+    for (const bad of [{ lat: 48.85, lng: 2.35 }, { lat: '20', lng: '-103' }]) {
+      const f = fakeDb(() => ({ data: { id: 'ORD-12345', access_token: TOKEN }, error: null }))
+      server.db = f.db
+      const res = await post({ ...body, deliveryMethod: 'delivery', customer: { ...body.customer, ...bad } })
+      expect(res.status).toBe(400)
+      expect(f.calls.some(c => has(c, 'insert'))).toBe(false)
+    }
   })
 
   it('si el folio ya existe, prueba con otro', async () => {

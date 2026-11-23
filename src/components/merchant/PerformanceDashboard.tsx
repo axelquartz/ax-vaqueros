@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useOrders } from '@/hooks/useOrders'
 import { useNow } from '@/hooks/useNow'
+import { ordersToCsv } from '@/lib/orders/export'
 import {
   MONTH_LABEL, bucketsFor, change, firstOrderAt, inRange, loyalty, peakHours, periodRanges, salesByMethod, summarize, topProducts,
   type Bucket, type Period,
@@ -244,6 +245,8 @@ export function PerformanceDashboard() {
     const cur = inRange(orders, current)
     return {
       start: current.start,
+      end: current.end,
+      rows: cur,
       cur: summarize(cur),
       prev: previous ? summarize(inRange(orders, previous)) : null,
       buckets: bucketsFor(period, cur, current, now),
@@ -253,6 +256,17 @@ export function PerformanceDashboard() {
       loyal: loyalty(cur, orders.filter(o => new Date(o.createdAt).getTime() < current.end)),
     }
   }, [orders, now, period, first])
+
+  const exportCsv = () => {
+    const blob = new Blob([ordersToCsv(data.rows)], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const d = new Date(now)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `pedidos-${period}-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   if (now === 0) return null // servidor: el dashboard se calcula en el cliente
 
@@ -283,6 +297,13 @@ export function PerformanceDashboard() {
             </button>
           ))}
         </div>
+      </div>
+
+      <div className="flex justify-end -mb-2">
+        <button type="button" onClick={exportCsv} disabled={data.rows.length === 0}
+          className="min-h-10 px-4 rounded-full text-sm border border-border bg-surface text-secondary hover:text-foreground hover:border-border-strong transition-colors disabled:opacity-40">
+          Exportar CSV · {meta.label}
+        </button>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

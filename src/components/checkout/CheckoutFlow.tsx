@@ -244,7 +244,7 @@ function StepDelivery({ selected, onSelect, onNext, onBack }: {
               <p className={`text-sm font-medium ${selected === method.id ? 'text-brand' : 'text-foreground'}`}>{method.label}</p>
               <p className="text-xs text-muted mt-0.5">{method.eta}</p>
             </div>
-            <span className="text-sm text-secondary shrink-0">{method.price === 0 ? 'Gratis' : `+$${method.price}`}</span>
+            <span className="text-sm text-secondary shrink-0">{method.id === 'delivery' ? 'Según tu ubicación' : method.price === 0 ? 'Gratis' : `+$${method.price}`}</span>
           </button>
         ))}
       </div>
@@ -257,7 +257,7 @@ function StepDelivery({ selected, onSelect, onNext, onBack }: {
 }
 
 // ─── Step 3: Datos del cliente ────────────────────────────
-function StepCustomer({ form, errors, deliveryMethod, onChange, onAddressChange, onAddressSelect, onMapPick, coords, onNext, onBack, loading }: {
+function StepCustomer({ form, errors, deliveryMethod, onChange, onAddressChange, onAddressSelect, onMapPick, coords, deliveryFee, zoneError, onNext, onBack, loading }: {
   form:            FormState
   errors:          Partial<FormState>
   deliveryMethod:  DeliveryMethodId
@@ -266,6 +266,8 @@ function StepCustomer({ form, errors, deliveryMethod, onChange, onAddressChange,
   onAddressSelect: (address: string, lat: number, lng: number) => void
   onMapPick:       (lat: number, lng: number) => void
   coords:          { lat: number; lng: number } | null
+  deliveryFee:     number
+  zoneError:       string | null
   onNext:          () => void
   onBack:          () => void
   loading:         boolean
@@ -294,6 +296,9 @@ function StepCustomer({ form, errors, deliveryMethod, onChange, onAddressChange,
               error={errors.address}
             />
             <CheckoutMap point={coords} onPick={onMapPick} />
+            {coords && (zoneError
+              ? <p role="alert" className="text-error text-sm">{zoneError}</p>
+              : <p role="status" className="text-secondary text-sm">Envío a tu ubicación: <span className="text-foreground font-semibold">{deliveryFee === 0 ? 'Gratis' : `$${deliveryFee}`}</span></p>)}
           </>
         )}
         <Textarea label="Notas (opcional)" placeholder="Alergias, preferencias..."
@@ -497,7 +502,11 @@ export function CheckoutFlow() {
   const [leaving, setLeaving]         = useState(false)
 
   const selectedMethod = ordersData.deliveryMethods.find(m => m.id === deliveryMethod)!
-  const orderTotal = total - discount + selectedMethod.price
+  // Envío a domicilio: lo calcula el servidor según la ubicación (0 hasta que marque el punto)
+  const [deliveryFee, setDeliveryFee] = useState(0)
+  const [zoneError, setZoneError]   = useState<string | null>(null)
+  const shippingFee = deliveryMethod === 'delivery' ? deliveryFee : selectedMethod.price
+  const orderTotal = total - discount + shippingFee
 
   const cartKey = JSON.stringify(items.map(i => [i.productId, i.quantity, i.selectedVariants]))
   useEffect(() => {
@@ -507,18 +516,24 @@ export function CheckoutFlow() {
       method: 'POST', signal: ctrl.signal, headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         deliveryMethod, coupon: coupon || undefined,
+        ...(deliveryMethod === 'delivery' && coords ? coords : {}),
         items: items.map(i => ({ productId: i.productId, quantity: i.quantity, selectedVariants: i.selectedVariants })),
       }),
     })
       .then(async r => ({ ok: r.ok, data: await r.json() }))
       .then(({ ok, data }) => {
-        if (ok) { setDiscount(data.discount ?? 0); setPromoName(data.promoName ?? null); return }
+        if (ok) {
+          setDiscount(data.discount ?? 0); setPromoName(data.promoName ?? null)
+          setDeliveryFee(data.deliveryFee ?? 0); setZoneError(null)
+          return
+        }
+        if (data.zone) { setZoneError(data.error); setDeliveryFee(0); return }
         if (data.coupon) { setCouponError(data.error); setCoupon('') }
       })
       .catch(() => { /* sin red: el servidor igual recalcula al cobrar */ })
     return () => ctrl.abort()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cartKey, deliveryMethod, coupon, leaving])
+  }, [cartKey, deliveryMethod, coupon, leaving, coords?.lat, coords?.lng])
 
   const patchField = (key: keyof FormState) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -560,6 +575,7 @@ export function CheckoutFlow() {
       if (!form.address.trim()) e.address = 'Escribe tu calle, número y colonia'
       else if (!coords) e.address = 'Marca tu ubicación en el mapa o usa tu ubicación actual'
       else if (!isInDeliveryArea(coords.lat, coords.lng)) e.address = 'Esa ubicación está fuera de nuestra zona de entrega'
+      else if (zoneError) e.address = zoneError
     }
     if (deliveryMethod === 'table'    && !form.tableNumber.trim()) e.tableNumber = 'Ingresa el número de mesa'
     return e
@@ -656,7 +672,7 @@ export function CheckoutFlow() {
         subtotal:  i.subtotal,
       })),
       subtotal:    total,
-      deliveryFee: selectedMethod.price,
+      deliveryFee: shippingFee,
       discount:    discount || undefined,
       promoName:   promoName ?? undefined,
       total:       orderTotal,
@@ -736,6 +752,8 @@ export function CheckoutFlow() {
             onAddressSelect={handleAddressSelect}
             onMapPick={handleMapPick}
             coords={coords}
+            deliveryFee={deliveryFee}
+            zoneError={zoneError}
             onNext={goToPayment}
             onBack={() => setStep('delivery')}
             loading={creatingIntent}
@@ -750,7 +768,7 @@ export function CheckoutFlow() {
               total={total}
               discount={discount}
               promoName={promoName}
-              deliveryFee={selectedMethod.price}
+              deliveryFee={shippingFee}
               folio={folio}
               onBack={() => setStep('customer')}
               onPaid={completeOrder}
@@ -762,7 +780,7 @@ export function CheckoutFlow() {
               total={total}
               discount={discount}
               promoName={promoName}
-              deliveryFee={selectedMethod.price}
+              deliveryFee={shippingFee}
               folio={folio}
               accessToken={accessToken}
               onBack={() => setStep('customer')}

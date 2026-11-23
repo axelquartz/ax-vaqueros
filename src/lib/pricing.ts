@@ -124,13 +124,16 @@ export function getDeliveryFee(deliveryMethod: string): number {
 
 export function priceOrder(
   items: OrderLineInput[], deliveryMethod: string, catalog: Product[] = products, promo: AppliedPromo | null = null,
+  /** Envío calculado por distancia (solo domicilio); si no, el fijo del método */
+  deliveryFeeOverride?: number,
 ): PricedOrder {
   if (!Array.isArray(items) || items.length === 0) throw new PricingError('El pedido está vacío')
   if (items.length > MAX_LINES) throw new PricingError('Demasiados productos en un pedido')
 
   const lines = items.map(item => priceLine(item, catalog))
   const subtotal = lines.reduce((sum, l) => sum + l.subtotal, 0)
-  const deliveryFee = getDeliveryFee(deliveryMethod)
+  const methodFee = getDeliveryFee(deliveryMethod)
+  const deliveryFee = deliveryMethod === 'delivery' && deliveryFeeOverride !== undefined ? deliveryFeeOverride : methodFee
   const discount = Math.min(promo?.discount ?? 0, subtotal)
   return {
     lines, subtotal, discount, deliveryFee,
