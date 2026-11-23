@@ -106,8 +106,21 @@ export function MerchantPanel() {
   })
   const cancel = (id: string) => act(() => { getOrderRepository().updateStatus(id, 'cancelled') })
 
+  const [toast, setToast] = useState<string | null>(null)
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(null), 3000)
+    return () => clearTimeout(t)
+  }, [toast])
+  const assign = async (id: string, riderId: string | null) => {
+    const ok = await getOrderRepository().assignRider?.(id, riderId)
+    if (!ok) return
+    const name = riders.find(r => r.userId === riderId)?.name || 'Repartidor'
+    setToast(riderId ? `${id} asignado a ${name}` : `${id} sin repartidor`)
+  }
+
   const card = (o: Order) => (
-    <OrderCard key={o.id} order={o} now={now} isNew={newIds.has(o.id)} onAdvance={advance} onCancel={cancel} riders={riders} onAssign={(id, riderId) => getOrderRepository().assignRider?.(id, riderId)} />
+    <OrderCard key={o.id} order={o} now={now} isNew={newIds.has(o.id)} onAdvance={advance} onCancel={cancel} riders={riders} onAssign={assign} />
   )
 
   return (
@@ -194,6 +207,12 @@ export function MerchantPanel() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 items-start">{list.map(card)}</div>
         )
       })()}
+
+      {toast && (
+        <div role="status" className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-full border border-border bg-elevated px-4 py-2.5 text-sm text-foreground shadow-lg animate-fade-up">
+          ✓ {toast}
+        </div>
+      )}
 
       <p className="sr-only" aria-live="assertive">
         {newIds.size > 0 ? `Llegó un pedido nuevo. ${statusLabel('pending')}.` : ''}

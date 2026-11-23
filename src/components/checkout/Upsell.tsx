@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useCart } from '@/context/CartContext'
+import { useMenu } from '@/hooks/useMenu'
 import menuData from '@/data/menu.json'
 import upsellData from '@/data/upsell.json'
 import type { Product, VariantGroup } from '@/types/menu'
@@ -13,10 +14,10 @@ export function hasRequiredVariants(product: Product): boolean {
 }
 
 /** Productos sugeridos que aún no están en el carrito, en el orden configurado */
-export function pickUpsell(cartProductIds: string[]): Product[] {
+export function pickUpsell(cartProductIds: string[], catalog: Product[] = menuData.products as Product[]): Product[] {
   const inCart = new Set(cartProductIds)
   return upsellData.productIds
-    .map(id => menuData.products.find(p => p.id === id) as Product | undefined)
+    .map(id => catalog.find(p => p.id === id))
     .filter((p): p is Product => !!p && p.available && !inCart.has(p.id))
     .slice(0, upsellData.maxItems)
 }
@@ -28,8 +29,10 @@ export function pickUpsell(cartProductIds: string[]): Product[] {
  */
 export function Upsell({ onOpenProduct }: { onOpenProduct: (p: Product) => void }) {
   const { items, addItem } = useCart()
+  const { products: catalog } = useMenu()
   // Lista fija al montar: lo recién agregado se queda visible con su ✓
-  const [products] = useState(() => pickUpsell(items.map(i => i.productId)))
+  const [initialCart] = useState(() => items.map(i => i.productId))
+  const products = useMemo(() => pickUpsell(initialCart, catalog), [initialCart, catalog])
   const [justAdded, setJustAdded] = useState<string | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
 

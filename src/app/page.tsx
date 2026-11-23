@@ -9,6 +9,7 @@ import { TopBanner } from '@/components/layout/TopBanner'
 import { useCart } from '@/context/CartContext'
 import { isStoreOpen, getStoreStatusText } from '@/lib/storeHours'
 import menuData from '@/data/menu.json'
+import { useMenu } from '@/hooks/useMenu'
 import type { Product } from '@/types/menu'
 import Link from 'next/link'
 import { Logo } from '@/components/brand/Logo'
@@ -26,7 +27,8 @@ export default function MenuPage() {
     setStoreStatus(getStoreStatusText())
   }, [])
 
-  const products = menuData.products.filter(
+  const { products: catalog, ordersPaused } = useMenu()
+  const products = catalog.filter(
     p => (activeCategory === 'todos' || p.categoryId === activeCategory) && p.available
   )
 
@@ -52,6 +54,11 @@ export default function MenuPage() {
         </div>
       </header>
 
+      {ordersPaused && (
+        <p role="status" className="bg-warning/10 border-b border-warning/25 text-warning text-sm text-center px-4 py-2">
+          Por ahora no estamos recibiendo pedidos. Vuelve en unos minutos.
+        </p>
+      )}
       <TopBanner />
       <AnnouncementBanner />
 

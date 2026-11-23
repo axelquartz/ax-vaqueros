@@ -3,6 +3,8 @@ import { priceOrder, PricingError, type OrderLineInput, type PricedOrder } from 
 import { getStoreStatusText, isStoreOpen } from '@/lib/storeHours'
 import { isServerSupabaseConfigured } from '@/lib/supabase/config'
 import { createDraft, updateDraft, type Draft } from '@/lib/orders/serverOrders'
+import { fetchMenuState } from '@/lib/menuStateServer'
+import { applyOverrides } from '@/lib/menuState'
 import { isMercadoPagoConfigured } from '@/lib/mercadopago'
 import type { Customer } from '@/types/order'
 
@@ -89,6 +91,14 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  const menu = await fetchMenuState()
+  if (menu.ordersPaused) {
+    return NextResponse.json(
+      { error: 'Por ahora no estamos recibiendo pedidos. Intenta de nuevo en unos minutos.' },
+      { status: 409 },
+    )
+  }
+
   const { customer, items, deliveryMethod, draft } = body ?? {}
   if (typeof customer?.name !== 'string' || typeof customer?.phone !== 'string' ||
       !customer.name.trim() || !customer.phone.trim()) {
@@ -97,7 +107,7 @@ export async function POST(req: NextRequest) {
 
   let priced: PricedOrder
   try {
-    priced = priceOrder(items, deliveryMethod)
+    priced = priceOrder(items, deliveryMethod, applyOverrides(menu.overrides))
   } catch (err) {
     if (err instanceof PricingError) return badRequest(err.message)
     throw err
