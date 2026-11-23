@@ -2,7 +2,7 @@ import { render, screen, within, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import {
   bucketsFor, change, firstOrderAt, inRange, periodRanges, salesByDay, salesByHour, salesByMethod, salesByMonth,
-  summarize, topProducts,
+  summarize, topProducts, peakHours, loyalty,
 } from '@/lib/orders/analytics'
 import { getOrderRepository, resetOrderRepository, STORAGE_KEY } from '@/lib/orders/repository'
 import { PerformanceDashboard, niceMax, money, moneyCompact } from '@/components/merchant/PerformanceDashboard'
@@ -195,5 +195,25 @@ describe('PerformanceDashboard', () => {
     act(() => { getOrderRepository().create(order('Z', { createdAt: at(21, 20, 20), status: 'pending', total: 30 })) })
     const ventas = screen.getByText('Ventas').parentElement!
     expect(within(ventas).getByText('$500')).toBeInTheDocument()
+  })
+})
+
+describe('horas pico y recurrentes', () => {
+  it('ordena las horas por pedidos e ignora cancelados', () => {
+    const peaks = peakHours(ORDERS)
+    expect(peaks[0]).toMatchObject({ hour: 19, orders: 3 })
+    expect(peaks.find(h => h.hour === 14)).toBeUndefined()
+  })
+
+  it('cuenta recurrentes por teléfono usando todo el historial', () => {
+    const c = (phone: string) => ({ name: 'Ana', phone, notes: '' })
+    const all = [
+      order('1', { customer: c('55 1234 5678'), createdAt: at(1, 19) }),
+      order('2', { customer: c('+52 5512345678'), createdAt: at(21, 19) }),
+      order('3', { customer: c('5599999999') , createdAt: at(21, 20) }),
+    ]
+    const l = loyalty(all.filter(o => o.id !== '1'), all)
+    expect(l).toMatchObject({ customers: 2, returning: 1, returningShare: 0.5 })
+    expect(l.top[0].orders).toBe(2)
   })
 })

@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { useOrders } from '@/hooks/useOrders'
 import { useNow } from '@/hooks/useNow'
 import {
-  MONTH_LABEL, bucketsFor, change, firstOrderAt, inRange, periodRanges, salesByMethod, summarize, topProducts,
+  MONTH_LABEL, bucketsFor, change, firstOrderAt, inRange, loyalty, peakHours, periodRanges, salesByMethod, summarize, topProducts,
   type Bucket, type Period,
 } from '@/lib/orders/analytics'
 
@@ -249,6 +249,8 @@ export function PerformanceDashboard() {
       buckets: bucketsFor(period, cur, current, now),
       top: topProducts(cur),
       methods: salesByMethod(cur),
+      peaks: peakHours(cur),
+      loyal: loyalty(cur, orders.filter(o => new Date(o.createdAt).getTime() < current.end)),
     }
   }, [orders, now, period, first])
 
@@ -315,6 +317,19 @@ export function PerformanceDashboard() {
           title="Por tipo de pedido"
           empty="Aún no hay ventas en este periodo."
           rows={data.methods.map(m => ({ key: m.id, label: m.label, value: m.orders, detail: `${m.orders} · ${percent(m.share)}` }))}
+        />
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <RankedList
+          title="Horas pico"
+          empty="Aún no hay ventas en este periodo."
+          rows={data.peaks.map(h => ({ key: String(h.hour), label: h.label, value: h.orders, detail: `${h.orders} pedidos · ${money(h.revenue)}` }))}
+        />
+        <RankedList
+          title={`Clientes recurrentes · ${data.loyal.returning} de ${data.loyal.customers} (${percent(data.loyal.returningShare)})`}
+          empty="Aún no hay clientes que hayan repetido."
+          rows={data.loyal.top.map(c => ({ key: c.key, label: c.name, value: c.orders, detail: `${c.orders} pedidos · ${money(c.revenue)}` }))}
         />
       </div>
     </section>

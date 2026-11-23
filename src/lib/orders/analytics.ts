@@ -216,3 +216,59 @@ export function salesByMethod(orders: Order[]): MethodStat[] {
     }
   })
 }
+
+export interface HourStat { hour: number; label: string; orders: number; revenue: number }
+
+/** Horas con más pedidos (las 24 posibles, solo las que tuvieron ventas), de mayor a menor */
+export function peakHours(orders: Order[], limit = 5): HourStat[] {
+  const hours = Array.from({ length: 24 }, (_, hour): HourStat => ({
+    hour, label: `${hour}:00–${(hour + 1) % 24}:00`, orders: 0, revenue: 0,
+  }))
+  for (const o of orders.filter(isSale)) {
+    const h = hours[new Date(o.createdAt).getHours()]
+    h.orders += 1
+    h.revenue += o.total
+  }
+  return hours.filter(h => h.orders > 0).sort((a, b) => b.orders - a.orders || b.revenue - a.revenue || a.hour - b.hour).slice(0, limit)
+}
+
+/** Identifica al cliente por teléfono (últimos 10 dígitos); sin teléfono, por nombre */
+export function customerKey(o: Order): string {
+  const digits = o.customer.phone.replace(/\D/g, '').slice(-10)
+  return digits.length >= 7 ? digits : `n:${o.customer.name.trim().toLowerCase()}`
+}
+
+export interface CustomerStat { key: string; name: string; orders: number; revenue: number }
+
+export interface Loyalty {
+  customers: number
+  /** Clientes del periodo con 2 o más pedidos en todo el historial */
+  returning: number
+  returningShare: number
+  top: CustomerStat[]
+}
+
+/**
+ * Recurrentes: clientes con ventas en el periodo que tienen 2+ pedidos en el
+ * historial (hasta el fin del periodo). `all` es todo el historial de pedidos.
+ */
+export function loyalty(periodOrders: Order[], all: Order[], limit = 5): Loyalty {
+  const inPeriod = new Set(periodOrders.filter(isSale).map(customerKey))
+  const history = new Map<string, CustomerStat>()
+  for (const o of all.filter(isSale)) {
+    const key = customerKey(o)
+    if (!inPeriod.has(key)) continue
+    const s = history.get(key) ?? { key, name: o.customer.name || 'Cliente', orders: 0, revenue: 0 }
+    s.orders += 1
+    s.revenue += o.total
+    history.set(key, s)
+  }
+  const stats = [...history.values()]
+  const returning = stats.filter(s => s.orders >= 2)
+  return {
+    customers: inPeriod.size,
+    returning: returning.length,
+    returningShare: inPeriod.size ? returning.length / inPeriod.size : 0,
+    top: returning.sort((a, b) => b.orders - a.orders || b.revenue - a.revenue).slice(0, limit),
+  }
+}
