@@ -1,4 +1,4 @@
-import webpush from 'web-push'
+import * as webpush from 'web-push'
 import { getServerSupabase } from '@/lib/supabase/server'
 
 /** Notificaciones push web (VAPID). Si faltan las llaves, todo es un no-op. */
