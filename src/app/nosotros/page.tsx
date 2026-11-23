@@ -155,6 +155,10 @@ export default function NosotrosPage() {
           </div>
         </div>
 
+        <p className="px-1 text-xs text-muted">
+          <a href="/privacidad" className="hover:text-foreground underline underline-offset-2">Aviso de privacidad</a>
+        </p>
+
       </div>
     </div>
   )

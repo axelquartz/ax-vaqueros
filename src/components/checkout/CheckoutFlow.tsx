@@ -299,6 +299,10 @@ function StepCustomer({ form, errors, deliveryMethod, onChange, onAddressChange,
         <Textarea label="Notas (opcional)" placeholder="Alergias, preferencias..."
           value={form.notes} onChange={onChange('notes')} />
       </div>
+      <p className="text-muted text-xs">
+        Al continuar aceptas nuestro{' '}
+        <a href="/privacidad" target="_blank" rel="noopener noreferrer" className="text-brand underline underline-offset-2">Aviso de privacidad</a>.
+      </p>
       <div className="flex gap-3">
         <Button variant="ghost" onClick={onBack} className="flex-1">Atrás</Button>
         <Button onClick={onNext} disabled={loading} className="flex-1">
