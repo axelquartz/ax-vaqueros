@@ -1,4 +1,6 @@
 {
+  "_alwaysOpen": "Pruebas: abierto 24 h mientras se definen los horarios oficiales. Cambiar a false para usar el horario de abajo.",
+  "alwaysOpen": true,
   "timezone": "America/Mexico_City",
   "schedule": [
     { "day": 0, "label": "Domingo",    "open": "12:00", "close": "22:00" },

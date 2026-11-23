@@ -34,9 +34,12 @@ function toMin(time: string): number {
 }
 
 const schedule = hoursData.schedule as DaySchedule[]
+/** Pruebas: abierto 24 h hasta tener horarios oficiales (hours.json) */
+export const ALWAYS_OPEN = hoursData.alwaysOpen === true
 
 // ─── Public API ───────────────────────────────────────────
 export function isStoreOpen(): boolean {
+  if (ALWAYS_OPEN) return true
   const { day, minutes } = getNowInTz(hoursData.timezone)
   const today = schedule.find(s => s.day === day)
   if (!today?.open || !today?.close) return false
@@ -49,6 +52,7 @@ export function getTodaySchedule(): DaySchedule | null {
 }
 
 export function getStoreStatusText(): string {
+  if (ALWAYS_OPEN) return 'Abierto 24 horas'
   const { day, minutes } = getNowInTz(hoursData.timezone)
   const today = schedule.find(s => s.day === day)
 
