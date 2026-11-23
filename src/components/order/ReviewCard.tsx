@@ -58,7 +58,13 @@ export function ReviewCard({ folio }: { folio: string }) {
         <button
           key={n} type="button" role="radio" aria-checked={rating === n} aria-label={`${n} ${n === 1 ? 'estrella' : 'estrellas'}`}
           disabled={busy}
-          onClick={() => { setRating(n); setSent(false); if (isHappy(n)) void submit(n, '') }}
+          onClick={() => {
+            setRating(n); setSent(false)
+            if (!isHappy(n)) return
+            // Se abre dentro del toque (antes de esperar al servidor) para que el navegador no lo bloquee
+            if (googleUrl) window.open(googleUrl, '_blank', 'noopener,noreferrer')
+            void submit(n, '')
+          }}
           className={`size-11 text-3xl leading-none transition-colors ${n <= rating ? 'text-brand' : 'text-border-strong hover:text-brand-muted'}`}
         >★</button>
       ))}
@@ -90,7 +96,7 @@ export function ReviewCard({ folio }: { folio: string }) {
       {sent && isHappy(rating) && googleUrl && (
         <a href={googleUrl} target="_blank" rel="noopener noreferrer"
            className="inline-flex items-center justify-center min-h-11 px-4 rounded-lg bg-brand text-inverse text-sm font-semibold">
-          Deja tu reseña en Google
+          Abrir reseña en Google
         </a>
       )}
       {sent && !isHappy(rating) && comment && <p className="text-muted text-xs">El dueño lo leerá personalmente.</p>}
