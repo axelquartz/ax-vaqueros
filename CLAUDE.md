@@ -39,3 +39,8 @@
 - Base de datos real (Supabase o similar) para pedidos persistentes.
 - WebSockets para estatus en tiempo real (repartidor + cocina).
 - GPS del repartidor para mapa live.
+
+## Hábitos de Sesión
+
+- Cuando la conversación se vuelva larga o pesada, avisar al usuario al final de una respuesta (no a mitad de una tarea): recordarle hacer `/clear` y darle un prompt listo para continuar (leer la memoria relevante + tareas pendientes).
+- Ahorro de tokens: respuestas concisas (resultado primero), agrupar llamadas a herramientas, limitar salidas con `head`/`tail`/`grep`, leer solo rangos necesarios, no releer ni re-verificar sin motivo, sin subagentes salvo petición explícita.
