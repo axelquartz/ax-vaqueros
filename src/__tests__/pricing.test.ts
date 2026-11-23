@@ -59,7 +59,7 @@ describe('priceLine', () => {
 
 describe('priceOrder', () => {
   it('suma líneas y envío según el método', () => {
-    const delivery = orders.deliveryMethods.find(m => m.price > 0)!
+    const delivery = orders.deliveryMethods.find(m => m.id === 'delivery')!
     const o = priceOrder([
       { productId: 'agua', quantity: 1, selectedVariants: {} },
       { productId: 'alitas-5', quantity: 1, selectedVariants: requiredSelection('alitas-5') },
