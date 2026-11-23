@@ -110,6 +110,9 @@ export default function NosotrosPage() {
 
           <div className="bg-surface border border-border rounded-2xl px-4 py-4 space-y-3">
             <h3 className="text-foreground font-semibold text-sm">Horario</h3>
+            {hoursData.alwaysOpen ? (
+              <p className="text-xs text-foreground">Abierto 24 horas</p>
+            ) : (
             <div className="space-y-1.5">
               {(hoursData.schedule as { day: number; label: string; open: string | null; close: string | null }[]).map(day => (
                 <div key={day.day} className="flex justify-between text-xs">
@@ -121,6 +124,7 @@ export default function NosotrosPage() {
                 </div>
               ))}
             </div>
+            )}
           </div>
         </div>
 
