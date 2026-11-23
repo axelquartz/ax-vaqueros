@@ -17,6 +17,8 @@ export interface OrderRepository {
   get(id: string): Order | undefined
   create(order: Order): void
   updateStatus(id: string, status: OrderStatusId): Order
+  /** Asigna (o quita con null) el repartidor; solo con Supabase */
+  assignRider?(id: string, riderId: string | null): void
   /** Notifica cambios, incluidos los hechos en otras pestañas. Devuelve unsubscribe. */
   subscribe(listener: () => void): () => void
 }

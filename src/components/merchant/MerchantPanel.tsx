@@ -6,6 +6,7 @@ import { useOrders } from '@/hooks/useOrders'
 import { clearRepositoryError, getOrderRepository, getRepositoryError, subscribeRepositoryError } from '@/lib/orders/repository'
 import { ACTIVE_STATUSES, statusLabel, type OrderStatusId } from '@/lib/orders/status'
 import { OrderCard } from './OrderCard'
+import { useRiders } from '@/hooks/useRiders'
 import type { Order } from '@/types/order'
 
 type Tab = 'active' | 'delivered' | 'cancelled'
@@ -46,6 +47,7 @@ function playChime(ctx: AudioContext) {
 export function MerchantPanel() {
   const orders = useOrders()
   const now = useNow()
+  const riders = useRiders()
   const [tab, setTab] = useState<Tab>('active')
   const [error, setError] = useState<string | null>(null)
 
@@ -105,7 +107,7 @@ export function MerchantPanel() {
   const cancel = (id: string) => act(() => { getOrderRepository().updateStatus(id, 'cancelled') })
 
   const card = (o: Order) => (
-    <OrderCard key={o.id} order={o} now={now} isNew={newIds.has(o.id)} onAdvance={advance} onCancel={cancel} />
+    <OrderCard key={o.id} order={o} now={now} isNew={newIds.has(o.id)} onAdvance={advance} onCancel={cancel} riders={riders} onAssign={(id, riderId) => getOrderRepository().assignRider?.(id, riderId)} />
   )
 
   return (

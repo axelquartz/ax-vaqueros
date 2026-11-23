@@ -18,11 +18,12 @@ export interface OrderRow {
   rider_lat?: number | null
   rider_lng?: number | null
   rider_at?: string | null
+  rider_id?: string | null
 }
 
 /** Columnas que la app necesita (nunca el access_token hacia el panel) */
 export const ORDER_COLUMNS =
-  'id, created_at, updated_at, status, delivery_method, customer, items, subtotal, delivery_fee, total, paid_at, rider_lat, rider_lng, rider_at'
+  'id, created_at, updated_at, status, delivery_method, customer, items, subtotal, delivery_fee, total, paid_at, rider_lat, rider_lng, rider_at, rider_id'
 
 export function rowToOrder(row: OrderRow): Order {
   return {
@@ -36,6 +37,7 @@ export function rowToOrder(row: OrderRow): Order {
     subtotal: row.subtotal,
     deliveryFee: row.delivery_fee,
     total: row.total,
+    riderId: row.rider_id ?? undefined,
     // La ubicación solo existe mientras va en camino (la base la borra al entregar)
     rider:
       row.status === 'ready' && row.rider_lat != null && row.rider_lng != null && row.rider_at
