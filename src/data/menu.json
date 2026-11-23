@@ -349,7 +349,7 @@
       "categoryId": "extras",
       "name": "Producto de prueba",
       "description": "Solo para probar pagos y entregas. Borrar antes de abrir al público.",
-      "price": 2,
+      "price": 5,
       "available": true,
       "featured": false,
       "variantGroups": [],
