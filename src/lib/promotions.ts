@@ -75,6 +75,25 @@ export function isActiveNow(p: Promotion, now: Date, timeZone: string): boolean 
   return true
 }
 
+export type PromoStatus = 'active' | 'scheduled' | 'paused' | 'expired'
+
+/**
+ * Estado para mostrarle al dueño:
+ *  - paused: la apagó él
+ *  - expired: ya pasó su fecha final
+ *  - active: se aplica ahora mismo
+ *  - scheduled: está encendida pero hoy/ahora no corre (aún no empieza, o fuera de su día/horario)
+ */
+export function promoStatus(p: Promotion, now: Date, timeZone: string): { status: PromoStatus; note?: string } {
+  if (!p.active) return { status: 'paused' }
+  const t = localParts(now, timeZone)
+  if (p.endsOn && t.date > p.endsOn) return { status: 'expired' }
+  if (p.maxUses != null && p.uses >= p.maxUses) return { status: 'expired', note: 'Usos agotados' }
+  if (isActiveNow(p, now, timeZone)) return { status: 'active' }
+  if (p.startsOn && t.date < p.startsOn) return { status: 'scheduled', note: `Empieza el ${p.startsOn}` }
+  return { status: 'scheduled', note: 'Fuera de su día u horario' }
+}
+
 /** Descuento en pesos de una promoción sobre el carrito (0 si no aplica) */
 export function discountFor(p: Promotion, lines: DiscountLine[], catalog: Product[]): number {
   const subtotal = lines.reduce((s, l) => s + l.subtotal, 0)

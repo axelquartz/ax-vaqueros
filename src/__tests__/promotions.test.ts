@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import menuData from '@/data/menu.json'
-import { CouponError, pickPromotion, type Promotion } from '@/lib/promotions'
+import { CouponError, pickPromotion, promoStatus, type Promotion } from '@/lib/promotions'
 import { priceOrder } from '@/lib/pricing'
 import type { Product } from '@/types/menu'
 
@@ -66,5 +66,15 @@ describe('promociones', () => {
     const priced = priceOrder([{ productId: 'dedos-queso-5', quantity: 2, selectedVariants: {} }], 'delivery', catalog, applied)
     expect(priced.discount).toBeGreaterThan(0)
     expect(priced.total).toBe(priced.subtotal - priced.discount + priced.deliveryFee)
+  })
+
+  it('estado: activa, programada, pausada y vencida', () => {
+    const st = (p: Promotion) => promoStatus(p, TUE_2PM, TZ).status
+    expect(st(promo())).toBe('active')
+    expect(st(promo({ active: false }))).toBe('paused')
+    expect(st(promo({ startsOn: '2026-12-01' }))).toBe('scheduled')
+    expect(st(promo({ days: [3] }))).toBe('scheduled')
+    expect(st(promo({ startTime: '18:00', endTime: '20:00' }))).toBe('scheduled')
+    expect(st(promo({ endsOn: '2026-11-01' }))).toBe('expired')
   })
 })

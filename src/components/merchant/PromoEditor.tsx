@@ -5,7 +5,8 @@ import menuData from '@/data/menu.json'
 import { isSupabaseConfigured } from '@/lib/supabase/config'
 import { getBrowserSupabase } from '@/lib/supabase/browser'
 import { COLUMNS, rowToPromotion } from '@/lib/promotionRows'
-import { normalizeCode, type Promotion } from '@/lib/promotions'
+import hours from '@/data/hours.json'
+import { normalizeCode, promoStatus, type Promotion, type PromoStatus } from '@/lib/promotions'
 
 const categories = menuData.categories.filter(c => c.id !== 'todos')
 const products = menuData.products
@@ -17,12 +18,20 @@ interface Form {
   name: string; kind: 'percent' | 'amount'; value: string
   scope: 'order' | 'category' | 'product'; target: string
   code: string; minSubtotal: string
+  allDay: boolean
   days: number[]; startTime: string; endTime: string
   startsOn: string; endsOn: string; maxUses: string
 }
 const EMPTY: Form = {
   name: '', kind: 'percent', value: '10', scope: 'order', target: '', code: '', minSubtotal: '',
-  days: [], startTime: '', endTime: '', startsOn: '', endsOn: '', maxUses: '',
+  allDay: true, days: [], startTime: '', endTime: '', startsOn: '', endsOn: '', maxUses: '',
+}
+
+const STATUS: Record<PromoStatus, { label: string; cls: string }> = {
+  active:    { label: 'Activa ahora', cls: 'bg-success/10 border-success/30 text-success' },
+  scheduled: { label: 'Programada',   cls: 'bg-warning/10 border-warning/30 text-warning' },
+  paused:    { label: 'Pausada',      cls: 'bg-elevated border-border text-muted' },
+  expired:   { label: 'Vencida',      cls: 'bg-error/10 border-error/30 text-error' },
 }
 
 const field = 'min-h-11 w-full rounded-lg border border-border bg-elevated px-3 text-foreground text-sm'
@@ -69,14 +78,14 @@ export function PromoEditor() {
     if (form.scope !== 'order' && !form.target) return setError('Elige a qué aplica.')
     const code = normalizeCode(form.code)
     if (code && !/^[A-Z0-9]{3,20}$/.test(code)) return setError('El código usa solo letras y números (3 a 20).')
-    if ((form.startTime || form.endTime) && !(form.startTime && form.endTime)) return setError('Pon hora de inicio y de fin.')
+    if (!form.allDay && !(form.startTime && form.endTime)) return setError('Pon hora de inicio y de fin, o marca "Todo el día".')
     setBusy(true)
     const { error } = await getBrowserSupabase().from('promotions').insert({
       name: form.name.trim(), kind: form.kind, value, scope: form.scope,
       target: form.scope === 'order' ? null : form.target, code: code || null,
       min_subtotal: Number(form.minSubtotal) || 0,
       days: form.days.length ? form.days : null,
-      start_time: form.startTime || null, end_time: form.endTime || null,
+      start_time: form.allDay ? null : form.startTime, end_time: form.allDay ? null : form.endTime,
       starts_on: form.startsOn || null, ends_on: form.endsOn || null,
       max_uses: Number(form.maxUses) || null,
     })
@@ -158,11 +167,21 @@ export function PromoEditor() {
               })}
             </div>
           </div>
+          <div className="space-y-3">
+            <label className="flex items-center gap-2.5 min-h-11 text-sm text-foreground">
+              <input type="checkbox" className="size-5 accent-[var(--brand)]" checked={form.allDay} onChange={e => set('allDay', e.target.checked)} />
+              Todo el día
+            </label>
+            {!form.allDay && (
+              <div className="grid grid-cols-2 gap-3">
+                <label className="block space-y-1.5"><span className="text-sm text-secondary">Desde la hora</span>
+                  <input className={field} type="time" value={form.startTime} onChange={e => set('startTime', e.target.value)} /></label>
+                <label className="block space-y-1.5"><span className="text-sm text-secondary">Hasta la hora</span>
+                  <input className={field} type="time" value={form.endTime} onChange={e => set('endTime', e.target.value)} /></label>
+              </div>
+            )}
+          </div>
           <div className="grid grid-cols-2 gap-3">
-            <label className="block space-y-1.5"><span className="text-sm text-secondary">Desde la hora</span>
-              <input className={field} type="time" value={form.startTime} onChange={e => set('startTime', e.target.value)} /></label>
-            <label className="block space-y-1.5"><span className="text-sm text-secondary">Hasta la hora</span>
-              <input className={field} type="time" value={form.endTime} onChange={e => set('endTime', e.target.value)} /></label>
             <label className="block space-y-1.5"><span className="text-sm text-secondary">Válida desde</span>
               <input className={field} type="date" value={form.startsOn} onChange={e => set('startsOn', e.target.value)} /></label>
             <label className="block space-y-1.5"><span className="text-sm text-secondary">Válida hasta</span>
@@ -180,21 +199,31 @@ export function PromoEditor() {
 
       <ul className="bg-surface border border-border rounded-2xl divide-y divide-border-subtle">
         {promos.length === 0 && <li className="px-4 py-6 text-muted text-sm text-center">Aún no hay promociones.</li>}
-        {promos.map(p => (
-          <li key={p.id} className="flex items-center gap-3 px-4 py-3">
-            <div className="min-w-0 flex-1">
-              <p className={`text-sm truncate ${p.active ? 'text-foreground' : 'text-muted line-through'}`}>
-                {p.name} {p.code && <span className="ml-1 rounded bg-elevated border border-border px-1.5 py-0.5 text-xs tabular">{p.code}</span>}
-              </p>
-              <p className="text-muted text-xs mt-0.5">{describe(p)}</p>
-            </div>
-            <button type="button" role="switch" aria-checked={p.active} aria-label={`${p.name} activa`} onClick={() => void toggle(p)}
-              className={`shrink-0 min-h-10 px-3 rounded-full text-xs font-medium border ${p.active ? 'bg-success/10 border-success/30 text-success' : 'bg-error/10 border-error/30 text-error'}`}>
-              {p.active ? 'Activa' : 'Pausada'}
-            </button>
-            <button type="button" aria-label={`Borrar ${p.name}`} onClick={() => void remove(p)} className="shrink-0 min-h-10 px-2 text-muted hover:text-error text-sm">✕</button>
-          </li>
-        ))}
+        {promos.map(p => {
+          const st = promoStatus(p, new Date(), hours.timezone)
+          const badge = STATUS[st.status]
+          return (
+            <li key={p.id} className="flex items-center gap-3 px-4 py-3">
+              <div className="min-w-0 flex-1">
+                <p className={`text-sm truncate ${st.status === 'paused' || st.status === 'expired' ? 'text-muted' : 'text-foreground'}`}>
+                  {p.name} {p.code && <span className="ml-1 rounded bg-elevated border border-border px-1.5 py-0.5 text-xs tabular">{p.code}</span>}
+                </p>
+                <p className="text-muted text-xs mt-0.5">{describe(p)}</p>
+                <p className="mt-1.5 flex flex-wrap items-center gap-2">
+                  <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${badge.cls}`}>{badge.label}</span>
+                  {st.note && <span className="text-muted text-xs">{st.note}</span>}
+                </p>
+              </div>
+              {st.status !== 'expired' && (
+                <button type="button" onClick={() => void toggle(p)} aria-label={`${p.active ? 'Pausar' : 'Activar'} ${p.name}`}
+                  className="shrink-0 min-h-10 px-3 rounded-lg border border-border text-xs text-secondary hover:bg-overlay">
+                  {p.active ? 'Pausar' : 'Activar'}
+                </button>
+              )}
+              <button type="button" aria-label={`Borrar ${p.name}`} onClick={() => void remove(p)} className="shrink-0 min-h-10 px-2 text-muted hover:text-error text-sm">✕</button>
+            </li>
+          )
+        })}
       </ul>
     </div>
   )
