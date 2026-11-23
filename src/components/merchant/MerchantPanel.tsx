@@ -1,5 +1,6 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useNow } from '@/hooks/useNow'
 import { useOrders } from '@/hooks/useOrders'
@@ -49,7 +50,7 @@ function playChime(ctx: AudioContext) {
   })
 }
 
-export function MerchantPanel() {
+export function MerchantPanel({ toolbar }: { toolbar?: ReactNode }) {
   const orders = useOrders()
   const now = useNow()
   const riders = useRiders()
@@ -147,6 +148,8 @@ export function MerchantPanel() {
               : 'Sin pedidos nuevos'}
           </p>
         </div>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+        {toolbar}
         <button
           type="button"
           onClick={toggleSound}
@@ -158,6 +161,7 @@ export function MerchantPanel() {
         >
           {soundOn ? 'Sonido activado' : 'Activar sonido'}
         </button>
+        </div>
       </div>
 
       {onTheWay.length > 0 && <LiveRidersMap orders={onTheWay} riders={riders} now={now} />}

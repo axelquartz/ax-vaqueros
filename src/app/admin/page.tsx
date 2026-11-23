@@ -21,10 +21,8 @@ export default function AdminPage() {
           Modo demo: sin Supabase, el panel no pide acceso y usa pedidos de ejemplo guardados en este navegador.
         </p>
       )}
-      {online && <div className="max-w-6xl mx-auto px-4 pt-4 flex justify-end"><StorePauseToggle /></div>}
-      {online && <div className="max-w-6xl mx-auto px-4 pt-4"><PushToggle mode="staff" /></div>}
       {online && <RefundsPanel />}
-      <MerchantPanel />
+      <MerchantPanel toolbar={online ? <><StorePauseToggle /><PushToggle mode="staff" /></> : undefined} />
       <PerformanceDashboard />
       {online && <ReviewsPanel />}
     </div>

@@ -58,7 +58,25 @@ export function PushToggle(props: Props) {
     } finally { setState('off') }
   }
 
-  const label = props.mode === 'customer' ? 'Avísame cuando cambie mi pedido' : 'Avisos de pedidos nuevos'
+  const customer = props.mode === 'customer'
+  if (!customer) {
+    // Chip compacto para la barra del panel
+    return (
+      <button
+        type="button" disabled={state === 'busy' || state === 'denied'} aria-pressed={state === 'on'}
+        onClick={() => (state === 'on' ? disable() : enable())}
+        title={state === 'denied' ? 'Bloqueaste las notificaciones en el navegador' : error ?? undefined}
+        className={[
+          'shrink-0 min-h-10 px-4 rounded-full text-sm font-medium border transition-colors disabled:opacity-60',
+          state === 'on' ? 'bg-brand/10 border-brand/40 text-brand' : 'bg-surface border-border text-secondary hover:border-border-strong',
+        ].join(' ')}
+      >
+        {state === 'denied' ? 'Avisos bloqueados' : state === 'on' ? 'Avisos activados' : 'Activar avisos'}
+      </button>
+    )
+  }
+
+  const label = 'Avísame cuando cambie mi pedido'
   return (
     <div className="flex items-center justify-between gap-3 bg-surface border border-border rounded-xl px-4 py-3">
       <p className="text-sm text-foreground">
