@@ -343,6 +343,17 @@
       "featured": false,
       "variantGroups": [],
       "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Agua"
+    },
+    {
+      "id": "prueba",
+      "categoryId": "extras",
+      "name": "Producto de prueba",
+      "description": "Solo para probar pagos y entregas. Borrar antes de abrir al público.",
+      "price": 2,
+      "available": true,
+      "featured": false,
+      "variantGroups": [],
+      "image": "https://placehold.co/120x120/1a1a1a/c9a96e?text=Prueba"
     }
   ]
 }
