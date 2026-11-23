@@ -123,12 +123,12 @@ export function createSupabaseOrderRepository(
         })
       return optimistic
     },
-    assignRider(id, riderId) {
+    async assignRider(id, riderId) {
       const current = orders.find(o => o.id === id)
-      if (!current) return
+      if (!current) return false
       const optimistic = { ...current, riderId: riderId ?? undefined, rider: undefined }
       upsert(optimistic)
-      void db
+      return await db
         .from('orders')
         .update({ rider_id: riderId })
         .eq('id', id)
@@ -139,9 +139,10 @@ export function createSupabaseOrderRepository(
             if (orders.find(o => o.id === id) === optimistic) upsert(current)
             onError?.(`No se pudo asignar el repartidor a ${id}.`)
             console.error('Supabase assign error:', error)
-            return
+            return false
           }
           upsert(rowToOrder(data as OrderRow))
+          return true
         })
     },
     subscribe(listener) {

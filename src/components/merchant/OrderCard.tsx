@@ -43,6 +43,7 @@ export function OrderCard({ order, now, isNew = false, onAdvance, onCancel, ride
   const method  = ordersData.deliveryMethods.find(m => m.id === order.deliveryMethod)
   const next    = nextStatus(order.status)
   const action  = ACTION_LABEL[order.status as OrderStatusId]
+  const assigned = order.riderId ? riders.find(r => r.userId === order.riderId) : undefined
   const elapsed = minutesSince(order.createdAt, now)
   const urgent  = isActive(order.status) && order.status !== 'ready' && elapsed >= URGENT_AFTER_MIN
 
@@ -81,6 +82,11 @@ export function OrderCard({ order, now, isNew = false, onAdvance, onCancel, ride
           )}
         </div>
         <div className="text-right shrink-0">
+          {assigned && (
+            <span className="inline-flex items-center gap-1 mb-1 rounded-full bg-success/10 border border-success/30 px-2 py-0.5 text-success text-xs font-medium">
+              ✓ {assigned.name || 'Repartidor'}
+            </span>
+          )}
           {isNew && <p className="text-brand text-xs font-semibold">Nuevo</p>}
           <p className={`text-xs tabular ${urgent ? 'text-warning font-semibold' : 'text-muted'}`}>
             {formatElapsed(elapsed)}

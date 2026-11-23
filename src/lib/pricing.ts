@@ -50,8 +50,8 @@ const variantGroups = menuData.variants as Record<string, VariantGroup>
 
 const splitIds = (value: string) => value.split(',').map(s => s.trim()).filter(Boolean)
 
-export function priceLine(input: OrderLineInput): PricedLine {
-  const product = products.find(p => p.id === input.productId)
+export function priceLine(input: OrderLineInput, catalog: Product[] = products): PricedLine {
+  const product = catalog.find(p => p.id === input.productId)
   if (!product) throw new PricingError(`Producto desconocido: ${input.productId}`)
   if (!product.available) throw new PricingError(`${product.name} no está disponible`)
 
@@ -117,11 +117,11 @@ export function getDeliveryFee(deliveryMethod: string): number {
   return method.price
 }
 
-export function priceOrder(items: OrderLineInput[], deliveryMethod: string): PricedOrder {
+export function priceOrder(items: OrderLineInput[], deliveryMethod: string, catalog: Product[] = products): PricedOrder {
   if (!Array.isArray(items) || items.length === 0) throw new PricingError('El pedido está vacío')
   if (items.length > MAX_LINES) throw new PricingError('Demasiados productos en un pedido')
 
-  const lines = items.map(priceLine)
+  const lines = items.map(item => priceLine(item, catalog))
   const subtotal = lines.reduce((sum, l) => sum + l.subtotal, 0)
   const deliveryFee = getDeliveryFee(deliveryMethod)
   return { lines, subtotal, deliveryFee, total: subtotal + deliveryFee }
