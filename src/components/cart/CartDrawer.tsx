@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useCart } from '@/context/CartContext'
 import { Button } from '@/components/ui/Button'
 
-export function CartDrawer() {
+export function CartDrawer({ ordersPaused = false }: { ordersPaused?: boolean }) {
   const { items, removeItem, updateQuantity, total, itemCount } = useCart()
   const router = useRouter()
   const [expanded, setExpanded] = useState(false)
@@ -110,8 +110,9 @@ export function CartDrawer() {
         {/* Botón de pedido — siempre visible */}
         <Button
           onClick={() => router.push('/checkout')}
+          disabled={ordersPaused}
         >
-          Hacer pedido
+          {ordersPaused ? 'Pedidos en pausa' : 'Hacer pedido'}
         </Button>
       </div>
     </div>

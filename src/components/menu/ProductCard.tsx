@@ -5,13 +5,19 @@ import type { Product } from '@/types/menu'
 interface ProductCardProps {
   product: Product
   onSelect: (product: Product) => void
+  /** Pedidos en pausa: se ve el menú pero no se puede agregar */
+  paused?: boolean
 }
 
-export function ProductCard({ product, onSelect }: ProductCardProps) {
+export function ProductCard({ product, onSelect, paused = false }: ProductCardProps) {
   return (
     <div
-      className="flex flex-col rounded-2xl overflow-hidden bg-surface cursor-pointer transition-transform duration-200 ease-out active:scale-[0.98]"
-      onClick={() => onSelect(product)}
+      className={[
+        'flex flex-col rounded-2xl overflow-hidden bg-surface',
+        paused ? 'opacity-60' : 'cursor-pointer transition-transform duration-200 ease-out active:scale-[0.98]',
+      ].join(' ')}
+      aria-disabled={paused || undefined}
+      onClick={paused ? undefined : () => onSelect(product)}
     >
       {/* Imagen */}
       <div className="relative w-full">
@@ -39,9 +45,11 @@ export function ProductCard({ product, onSelect }: ProductCardProps) {
         )}
 
         {/* Botón + */}
-        <span className="absolute bottom-2.5 right-2.5 w-9 h-9 rounded-full bg-foreground text-background flex items-center justify-center text-xl font-light shadow-lg">
-          +
-        </span>
+        {!paused && (
+          <span className="absolute bottom-2.5 right-2.5 w-9 h-9 rounded-full bg-foreground text-background flex items-center justify-center text-xl font-light shadow-lg">
+            +
+          </span>
+        )}
       </div>
 
       {/* Info */}

@@ -99,6 +99,7 @@ export default function MenuPage() {
               key={product.id}
               product={product}
               onSelect={setSelectedProduct}
+              paused={ordersPaused}
             />
           ))}
         </div>
@@ -109,7 +110,7 @@ export default function MenuPage() {
         onClose={() => setSelectedProduct(null)}
       />
 
-      <CartDrawer />
+      <CartDrawer ordersPaused={ordersPaused} />
     </div>
   )
 }
