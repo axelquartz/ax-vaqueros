@@ -1,6 +1,15 @@
 export const MIN_REASON = 5
 export const MAX_REASON = 500
 
+/** Ventana para solicitar (desde que se pagó). No se muestra al cliente. */
+const REFUND_WINDOW_MS = 2 * 60 * 60 * 1000
+
+export function canRequestRefund(paidAt: string | null | undefined, now = Date.now()): boolean {
+  if (!paidAt) return false
+  const t = new Date(paidAt).getTime()
+  return Number.isFinite(t) && now - t <= REFUND_WINDOW_MS
+}
+
 export type RefundStatus = 'requested' | 'processing' | 'approved' | 'rejected' | 'failed'
 
 export const REFUND_LABEL: Record<RefundStatus, string> = {

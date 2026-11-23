@@ -14,6 +14,7 @@ export function RefundCard({ folio }: { folio: string }) {
   const token = useSyncExternalStore(noop, () => findOrderToken(folio), () => undefined)
   const [loaded, setLoaded] = useState(false)
   const [refund, setRefund] = useState<Refund | null>(null)
+  const [eligible, setEligible] = useState(false)
   const [open, setOpen] = useState(false)
   const [reason, setReason] = useState('')
   const [busy, setBusy] = useState(false)
@@ -25,7 +26,7 @@ export function RefundCard({ folio }: { folio: string }) {
     let cancelled = false
     fetch(url, { headers: { [ORDER_TOKEN_HEADER]: token }, cache: 'no-store' })
       .then(r => (r.ok ? r.json() : null))
-      .then(d => { if (!cancelled) { setRefund(d?.refund ?? null); setLoaded(true) } })
+      .then(d => { if (!cancelled) { setRefund(d?.refund ?? null); setEligible(Boolean(d?.eligible)); setLoaded(true) } })
       .catch(() => { if (!cancelled) setLoaded(true) })
     return () => { cancelled = true }
   }, [url, token])
@@ -56,6 +57,8 @@ export function RefundCard({ folio }: { folio: string }) {
       </div>
     )
   }
+
+  if (!eligible) return null
 
   if (!open) {
     return (

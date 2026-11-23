@@ -3,7 +3,7 @@ import { isServerSupabaseConfigured } from '@/lib/supabase/config'
 import { getServerSupabase } from '@/lib/supabase/server'
 import { findForCustomer } from '@/lib/orders/serverOrders'
 import { ORDER_TOKEN_HEADER } from '@/lib/orders/customerApi'
-import { parseRefundReason } from '@/lib/refunds'
+import { canRequestRefund, parseRefundReason } from '@/lib/refunds'
 import { notifyStaff } from '@/lib/push'
 
 /**
@@ -28,13 +28,17 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ foli
   const auth = await authorize(req, params)
   if (auth.error) return auth.error
   const { data } = await getServerSupabase().from('refunds').select('status, reason, admin_note').eq('order_id', auth.row.id).maybeSingle()
-  return json({ refund: data ? { ...data, admin_note: data.status === 'rejected' ? data.admin_note : '' } : null })
+  return json({
+    refund: data ? { ...data, admin_note: data.status === 'rejected' ? data.admin_note : '' } : null,
+    eligible: canRequestRefund(auth.row.paid_at),
+  })
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ folio: string }> }) {
   const auth = await authorize(req, params)
   if (auth.error) return auth.error
   if (!auth.row.paid_at || !auth.row.payment_intent_id) return json({ error: 'Este pedido no tiene un pago que reembolsar' }, 409)
+  if (!canRequestRefund(auth.row.paid_at)) return json({ error: 'Ya no es posible solicitar un reembolso para este pedido. Si necesitas ayuda, llámanos.' }, 409)
   const reason = parseRefundReason(await req.json().catch(() => null))
   if (!reason) return json({ error: 'Cuéntanos el motivo (mínimo 5 caracteres)' }, 400)
 
