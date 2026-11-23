@@ -34,7 +34,7 @@ export function ordersToCsv(orders: Order[]): string {
         o.id,
         `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
         `${pad(d.getHours())}:${pad(d.getMinutes())}`,
-        STATUS[o.status] ?? o.status,
+        o.refundedAt ? 'Reembolsado' : STATUS[o.status] ?? o.status,
         METHOD[o.deliveryMethod] ?? o.deliveryMethod,
         o.customer.name,
         o.customer.phone,

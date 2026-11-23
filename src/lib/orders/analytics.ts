@@ -8,7 +8,7 @@ import type { Order } from '@/types/order'
  * pedidos y una ventana de tiempo, no saben de dónde vienen los datos.
  *
  * Criterios:
- * - Ventas = pedidos no cancelados (el pago es por adelantado en el checkout).
+ * - Ventas = pedidos no cancelados ni reembolsados (el pago es por adelantado en el checkout).
  * - Tiempo de entrega = de creado a entregado, solo pedidos entregados.
  */
 
@@ -84,7 +84,7 @@ export function inRange(orders: Order[], { start, end }: Range): Order[] {
   })
 }
 
-const isSale = (o: Order) => o.status !== 'cancelled'
+const isSale = (o: Order) => o.status !== 'cancelled' && !o.refundedAt
 
 export interface Summary {
   revenue: number
@@ -101,7 +101,7 @@ export function summarize(orders: Order[]): Summary {
   const revenue = sales.reduce((s, o) => s + o.total, 0)
   const delivered = orders.filter(o => o.status === 'delivered')
   const fulfillment = delivered.map(o => (new Date(o.updatedAt).getTime() - new Date(o.createdAt).getTime()) / 60_000)
-  const cancelled = orders.length - sales.length
+  const cancelled = orders.filter(o => o.status === 'cancelled').length
   return {
     revenue,
     orders: sales.length,

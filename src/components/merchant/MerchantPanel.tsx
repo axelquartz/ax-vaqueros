@@ -9,7 +9,6 @@ import { ACTIVE_STATUSES, statusLabel, type OrderStatusId } from '@/lib/orders/s
 import { OrderCard } from './OrderCard'
 import dynamic from 'next/dynamic'
 import { useRiders } from '@/hooks/useRiders'
-import { isSupabaseConfigured } from '@/lib/supabase/config'
 import type { Order } from '@/types/order'
 
 // Leaflet toca `window`: el mapa solo se carga en el navegador
@@ -107,15 +106,11 @@ export function MerchantPanel({ toolbar }: { toolbar?: ReactNode }) {
   const act = (fn: () => void) => {
     try { fn(); setError(null) } catch (e) { setError(e instanceof Error ? e.message : 'No se pudo actualizar el pedido') }
   }
-  const notify = (id: string) => {
-    if (isSupabaseConfigured()) void fetch('/api/push/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: id }) }).catch(() => {})
-  }
   const advance = (id: string, to: OrderStatusId) => act(() => {
     getOrderRepository().updateStatus(id, to)
-    setTimeout(() => notify(id), 1500)   // da tiempo a que la base guarde el cambio
     setNewIds(prev => { const n = new Set(prev); n.delete(id); return n })
   })
-  const cancel = (id: string) => act(() => { getOrderRepository().updateStatus(id, 'cancelled'); setTimeout(() => notify(id), 1500) })
+  const cancel = (id: string) => act(() => { getOrderRepository().updateStatus(id, 'cancelled') })
 
   const [toast, setToast] = useState<string | null>(null)
   useEffect(() => {

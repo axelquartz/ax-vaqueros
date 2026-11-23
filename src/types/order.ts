@@ -40,6 +40,8 @@ export interface Order {
   discount?: number
   promoName?: string
   total: number
+  /** Cuándo se reembolsó el pago (ya no cuenta como venta) */
+  refundedAt?: string
   rider?: RiderLocation
   /** Repartidor asignado (user_id de staff) */
   riderId?: string

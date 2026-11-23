@@ -131,6 +131,8 @@ export function createSupabaseOrderRepository(
             return
           }
           upsert(rowToOrder(data as OrderRow))
+          // Avisa al cliente (push); sirve igual para panel y repartidor
+          void fetch('/api/push/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: id }) }).catch(() => {})
         })
       return optimistic
     },

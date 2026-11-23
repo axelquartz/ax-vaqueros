@@ -13,6 +13,7 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
       <>
         <p>Al hacer un pedido te pedimos: nombre, teléfono y, solo si eliges entrega a domicilio, tu dirección y el punto que marcas en el mapa; si eliges mesa, el número de mesa. También guardamos las notas que escribas (por ejemplo alergias) y el contenido de tu pedido.</p>
         <p>Si dejas una reseña, guardamos la calificación y tu comentario. Durante una entrega a domicilio, el repartidor comparte su ubicación para que veas el avance de tu pedido.</p>
+        <p>Si pides un reembolso, guardamos el motivo que escribas. Si activas los avisos del pedido, guardamos los datos técnicos que tu navegador genera para enviarte notificaciones (no tu nombre ni tu teléfono); puedes desactivarlos cuando quieras.</p>
         <p>No recabamos datos personales sensibles, salvo que los escribas tú mismo en las notas.</p>
       </>
     ),
@@ -34,6 +35,7 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
         <ul className="list-disc pl-5 space-y-1">
           <li><strong className="text-foreground">Mercado Pago</strong>, para cobrar. Los datos de tu tarjeta los captura directamente Mercado Pago; nosotros no los vemos ni los guardamos.</li>
           <li><strong className="text-foreground">Supabase</strong>, donde se almacenan los pedidos.</li>
+          <li><strong className="text-foreground">Servicios de notificaciones de tu navegador</strong> (Google, Apple o Mozilla, según el que uses), que entregan los avisos que activaste.</li>
           <li><strong className="text-foreground">Netlify</strong>, que aloja este sitio.</li>
           <li><strong className="text-foreground">Mapbox</strong> y <strong className="text-foreground">Google Maps</strong>, para ubicar y autocompletar tu dirección y mostrar mapas.</li>
         </ul>

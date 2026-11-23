@@ -299,7 +299,7 @@ export function PerformanceDashboard() {
         </div>
       </div>
 
-      <div className="flex justify-end -mb-2">
+      <div className="flex justify-end">
         <button type="button" onClick={exportCsv} disabled={data.rows.length === 0}
           className="min-h-10 px-4 rounded-full text-sm border border-border bg-surface text-secondary hover:text-foreground hover:border-border-strong transition-colors disabled:opacity-40">
           Exportar CSV · {meta.label}

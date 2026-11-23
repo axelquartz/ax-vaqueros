@@ -50,6 +50,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ fol
 
   try {
     const refund = await refundPayment(order.payment_intent_id)
+    await db.from('orders').update({ refunded_at: now() }).eq('id', folio)
     await db.from('refunds').update({ status: 'approved', mp_refund_id: String(refund.id), admin_note: decision.note, resolved_at: now() }).eq('order_id', folio)
     void notifyOrder(folio, { title: 'Reembolso aprobado', body: 'Te devolvimos el pago. Tu banco puede tardar unos días en reflejarlo.' })
     return json({ status: 'approved' })
