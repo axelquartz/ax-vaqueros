@@ -3,6 +3,8 @@ import { PerformanceDashboard } from '@/components/merchant/PerformanceDashboard
 import { isSupabaseConfigured } from '@/lib/supabase/config'
 import { StorePauseToggle } from '@/components/merchant/StorePauseToggle'
 import { ReviewsPanel } from '@/components/merchant/ReviewsPanel'
+import { RefundsPanel } from '@/components/merchant/RefundsPanel'
+import { PushToggle } from '@/components/PushToggle'
 import { AdminHeader } from './AdminHeader'
 
 export const metadata = { title: "Admin — Vaquero's", robots: { index: false } }
@@ -20,6 +22,8 @@ export default function AdminPage() {
         </p>
       )}
       {online && <div className="max-w-6xl mx-auto px-4 pt-4 flex justify-end"><StorePauseToggle /></div>}
+      {online && <div className="max-w-6xl mx-auto px-4 pt-4"><PushToggle mode="staff" /></div>}
+      {online && <RefundsPanel />}
       <MerchantPanel />
       <PerformanceDashboard />
       {online && <ReviewsPanel />}

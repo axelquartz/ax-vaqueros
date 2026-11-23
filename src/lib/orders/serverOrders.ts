@@ -1,3 +1,4 @@
+import { notifyStaff } from '@/lib/push'
 import { getServerSupabase } from '@/lib/supabase/server'
 import type { PricedOrder } from '@/lib/pricing'
 import type { Customer, Order } from '@/types/order'
@@ -114,12 +115,14 @@ export async function findForCustomer(folio: string, accessToken: string): Promi
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export async function setPaid(folio: string): Promise<void> {
-  const { error } = await getServerSupabase()
+  const { data, error } = await getServerSupabase()
     .from('orders')
     .update({ paid_at: new Date().toISOString() })
     .eq('id', folio)
     .is('paid_at', null)
+    .select('id')
   if (error) throw new Error(`No se pudo marcar pagado: ${error.message}`)
+  if (data?.length) void notifyStaff({ title: 'Pedido nuevo', body: folio })
 }
 
 export type CustomerOrderResult =

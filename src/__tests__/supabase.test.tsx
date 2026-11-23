@@ -590,8 +590,10 @@ describe('Estatus del cliente con Supabase', () => {
     saveOrder({ folio: 'ORD-70000', timestamp: '', total: 15, deliveryMethod: 'pickup', itemCount: 1, accessToken: TOKEN })
     const fetchMock = serve([{ paid: true, status: 'delivered' }])
     render(<OrderStatus order={placeholder} />)
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+    // Solo cuenta las consultas del estatus (reseña y reembolso son aparte)
+    const polls = () => fetchMock.mock.calls.filter(([u]) => !/\/(review|refund)$/.test(String(u))).length
+    await waitFor(() => expect(polls()).toBe(1))
     await act(() => vi.advanceTimersByTimeAsync(30_000))
-    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(polls()).toBe(1)
   })
 })

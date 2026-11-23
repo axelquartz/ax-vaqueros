@@ -91,6 +91,18 @@ export function getPayment(id: string | number): Promise<MpPayment> {
   return call<MpPayment>(`${API}/${encodeURIComponent(String(id))}`)
 }
 
+/**
+ * Reembolso total. La llave de idempotencia es estable por pago: un reintento
+ * (doble clic, red caída) nunca devuelve el dinero dos veces.
+ */
+export function refundPayment(paymentId: string | number): Promise<{ id: number | string; status: string }> {
+  return call(`${API}/${encodeURIComponent(String(paymentId))}/refunds`, {
+    method: 'POST',
+    headers: { 'X-Idempotency-Key': `refund-${paymentId}` },
+    body: JSON.stringify({}),
+  })
+}
+
 /** ¿Este pago cubre exactamente este pedido? */
 export function paymentPaysOrder(payment: MpPayment, order: { id: string; total: number }): boolean {
   return (
