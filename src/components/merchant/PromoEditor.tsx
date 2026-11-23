@@ -104,7 +104,7 @@ export function PromoEditor() {
           <h1 className="font-display text-[1.625rem] font-bold leading-none text-foreground">Promociones</h1>
           <p className="text-muted text-sm mt-1.5">Sin código se aplican solas. Con código son cupones que el cliente escribe. Solo se aplica una por pedido: la que más descuente.</p>
         </div>
-        <button type="button" onClick={() => setOpen(o => !o)} className="shrink-0 min-h-11 px-4 rounded-lg bg-primary text-background text-sm font-semibold">
+        <button type="button" onClick={() => setOpen(o => !o)} className="shrink-0 min-h-11 px-4 rounded-lg bg-brand text-inverse text-sm font-semibold">
           {open ? 'Cerrar' : '+ Nueva'}
         </button>
       </div>
@@ -153,7 +153,7 @@ export function PromoEditor() {
                 return (
                   <button key={d.v} type="button" aria-pressed={on} aria-label={DAY_NAMES[d.v]}
                     onClick={() => set('days', on ? form.days.filter(x => x !== d.v) : [...form.days, d.v])}
-                    className={`size-11 rounded-full text-sm font-medium border ${on ? 'bg-primary text-background border-primary' : 'bg-elevated border-border text-muted'}`}>{d.l}</button>
+                    className={`size-11 rounded-full text-sm font-medium border ${on ? 'bg-brand text-inverse border-brand' : 'bg-elevated border-border text-muted'}`}>{d.l}</button>
                 )
               })}
             </div>
@@ -172,7 +172,7 @@ export function PromoEditor() {
             <label className="block space-y-1.5"><span className="text-sm text-secondary">Usos máximos</span>
               <input className={field} type="number" inputMode="numeric" min={1} placeholder="Sin límite" value={form.maxUses} onChange={e => set('maxUses', e.target.value)} /></label>
           </div>
-          <button type="submit" disabled={busy} className="w-full min-h-12 rounded-lg bg-primary text-background font-semibold disabled:opacity-50">
+          <button type="submit" disabled={busy} className="w-full min-h-12 rounded-lg bg-brand text-inverse font-semibold disabled:opacity-50">
             {busy ? 'Guardando…' : 'Guardar promoción'}
           </button>
         </form>
