@@ -3,8 +3,7 @@
 import dynamic from 'next/dynamic'
 import businessData from '@/data/business.json'
 import hoursData from '@/data/hours.json'
-import Link from 'next/link'
-import { Logo } from '@/components/brand/Logo'
+import { SiteHeader } from '@/components/layout/SiteHeader'
 
 const LocationMap = dynamic(
   () => import('@/components/maps/LocationMap').then(m => m.LocationMap),
@@ -35,15 +34,7 @@ export default function NosotrosPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
 
-      {/* Navbar */}
-      <header className="sticky top-0 z-30 bg-background/90 backdrop-blur-md border-b border-border">
-        <div className="max-w-[90vw] mx-auto px-4 h-14 flex items-center justify-between">
-          <Link href="/" aria-label="Vaquero's — Inicio" className="shrink-0">
-            <Logo variant="long" className="h-5 sm:h-6" />
-          </Link>
-          <Link href="/" className="text-muted hover:text-foreground transition-colors text-sm flex items-center gap-1.5"><svg aria-hidden viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M10 3.5 5.5 8l4.5 4.5" /></svg>Menú</Link>
-        </div>
-      </header>
+      <SiteHeader />
 
       <div className="max-w-[90vw] mx-auto w-full px-0 pb-16 space-y-8 mt-6">
 

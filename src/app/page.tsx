@@ -11,9 +11,7 @@ import { isStoreOpen, getStoreStatusText } from '@/lib/storeHours'
 import menuData from '@/data/menu.json'
 import { useMenu } from '@/hooks/useMenu'
 import type { Product } from '@/types/menu'
-import Link from 'next/link'
-import { Logo } from '@/components/brand/Logo'
-import { SiteNav } from '@/components/layout/SiteNav'
+import { SiteHeader } from '@/components/layout/SiteHeader'
 
 export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState('todos')
@@ -35,24 +33,13 @@ export default function MenuPage() {
   return (
     <div className="min-h-screen flex flex-col">
 
-      {/* Header */}
-      <header className="sticky top-0 z-30 bg-background/90 backdrop-blur-md border-b border-border">
-        <div className="max-w-[90vw] mx-auto px-4 h-14 flex items-center justify-between">
-          <Link href="/" aria-label="Vaquero's — Menú Digital" className="shrink-0">
-            <h1 className="sr-only">{"Vaquero's — Menú Digital"}</h1>
-            <Logo variant="small" className="h-8 sm:hidden" />
-            <Logo variant="long" className="hidden sm:block h-6" />
-          </Link>
-          <div className="flex items-center gap-3 sm:gap-5">
-            {storeStatus && (
-              <span className={`text-xs font-medium ${storeOpen ? 'text-success' : 'text-muted'}`}>
-                {storeOpen ? '● Abierto' : '● Cerrado'}
-              </span>
-            )}
-            <SiteNav />
-          </div>
-        </div>
-      </header>
+      <SiteHeader
+        status={storeStatus && (
+          <span className={`text-xs font-medium ${storeOpen ? 'text-success' : 'text-muted'}`}>
+            {storeOpen ? '● Abierto' : '● Cerrado'}
+          </span>
+        )}
+      />
 
       {ordersPaused && (
         <p role="status" className="bg-warning/10 border-b border-warning/25 text-warning text-sm text-center px-4 py-2">

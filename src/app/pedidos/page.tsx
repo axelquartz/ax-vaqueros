@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation'
 import { readOrders } from '@/lib/orderHistory'
 import type { SavedOrder } from '@/lib/orderHistory'
 import ordersData from '@/data/orders.json'
-import Link from 'next/link'
-import { Logo } from '@/components/brand/Logo'
+import { SiteHeader } from '@/components/layout/SiteHeader'
 
 export default function PedidosPage() {
   const router = useRouter()
@@ -34,22 +33,7 @@ export default function PedidosPage() {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-border">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
-          <button
-            onClick={() => router.push('/')}
-            className="text-muted hover:text-foreground transition-colors text-sm flex items-center gap-1.5"
-          >
-            <svg aria-hidden viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M10 3.5 5.5 8l4.5 4.5" /></svg>
-            Menú
-          </button>
-          <span className="text-border">|</span>
-          <h1 className="text-foreground text-sm font-medium">Mis pedidos</h1>
-          <Link href="/" aria-label="Vaquero's — Inicio" className="ml-auto shrink-0">
-            <Logo variant="small" className="h-7" />
-          </Link>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="max-w-md mx-auto px-4 py-6 space-y-3">
         {!mounted && (
