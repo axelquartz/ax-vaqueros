@@ -13,6 +13,7 @@ import { getOrderRepository } from '@/lib/orders/repository'
 import { isStoreOpen, getStoreStatusText } from '@/lib/storeHours'
 import dynamic from 'next/dynamic'
 import { AddressAutocomplete } from '@/components/checkout/AddressAutocomplete'
+import { isInDeliveryArea } from '@/lib/geocode'
 import { Upsell } from '@/components/checkout/Upsell'
 import { ProductSheet } from '@/components/menu/ProductSheet'
 import type { Product } from '@/types/menu'
@@ -204,13 +205,14 @@ function StepDelivery({ selected, onSelect, onNext, onBack }: {
 }
 
 // ─── Step 3: Datos del cliente ────────────────────────────
-function StepCustomer({ form, errors, deliveryMethod, onChange, onAddressChange, onAddressSelect, coords, onNext, onBack, loading }: {
+function StepCustomer({ form, errors, deliveryMethod, onChange, onAddressChange, onAddressSelect, onMapPick, coords, onNext, onBack, loading }: {
   form:            FormState
   errors:          Partial<FormState>
   deliveryMethod:  DeliveryMethodId
   onChange:        (key: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
   onAddressChange: (value: string) => void
   onAddressSelect: (address: string, lat: number, lng: number) => void
+  onMapPick:       (lat: number, lng: number) => void
   coords:          { lat: number; lng: number } | null
   onNext:          () => void
   onBack:          () => void
@@ -239,7 +241,7 @@ function StepCustomer({ form, errors, deliveryMethod, onChange, onAddressChange,
               onSelect={onAddressSelect}
               error={errors.address}
             />
-            {coords && <CheckoutMap lat={coords.lat} lng={coords.lng} />}
+            <CheckoutMap point={coords} onPick={onMapPick} />
           </>
         )}
         <Textarea label="Notas (opcional)" placeholder="Alergias, preferencias..."
@@ -436,14 +438,20 @@ export function CheckoutFlow() {
 
   // Cuando el usuario escribe manualmente en el campo dirección
   const handleAddressChange = (value: string) => {
+    // El punto del mapa se conserva: el cliente suele elegir la calle y luego escribir su número
     setForm(f => ({ ...f, address: value }))
-    setCoords(null) // limpiar coords hasta que seleccione una sugerencia
     if (errors.address) setErrors(err => ({ ...err, address: undefined }))
   }
 
   // Cuando el usuario selecciona una sugerencia del autocomplete
   const handleAddressSelect = (address: string, lat: number, lng: number) => {
     setForm(f => ({ ...f, address }))
+    setCoords({ lat, lng })
+    if (errors.address) setErrors(err => ({ ...err, address: undefined }))
+  }
+
+  // El cliente tocó el mapa o arrastró el pin
+  const handleMapPick = (lat: number, lng: number) => {
     setCoords({ lat, lng })
     if (errors.address) setErrors(err => ({ ...err, address: undefined }))
   }
@@ -458,7 +466,11 @@ export function CheckoutFlow() {
     const e: Partial<FormState> = {}
     if (!form.name.trim())  e.name  = 'Requerido'
     if (!form.phone.trim()) e.phone = 'Requerido'
-    if (deliveryMethod === 'delivery' && !form.address.trim())     e.address     = 'Requerido para domicilio'
+    if (deliveryMethod === 'delivery') {
+      if (!form.address.trim()) e.address = 'Escribe tu calle, número y colonia'
+      else if (!coords) e.address = 'Marca tu ubicación en el mapa o usa tu ubicación actual'
+      else if (!isInDeliveryArea(coords.lat, coords.lng)) e.address = 'Esa ubicación está fuera de nuestra zona de entrega'
+    }
     if (deliveryMethod === 'table'    && !form.tableNumber.trim()) e.tableNumber = 'Ingresa el número de mesa'
     return e
   }
@@ -620,6 +632,7 @@ export function CheckoutFlow() {
             onChange={patchField}
             onAddressChange={handleAddressChange}
             onAddressSelect={handleAddressSelect}
+            onMapPick={handleMapPick}
             coords={coords}
             onNext={goToPayment}
             onBack={() => setStep('delivery')}
